@@ -1,0 +1,7 @@
+.controlIcon {
+    border-radius: 7px;
+    border: 1px solid gray;
+    background-color: deepskyblue;
+    padding: 2px;
+    vertical-align: middle;
+}
