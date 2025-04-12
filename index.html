@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+    <link href="css/common.css" rel="stylesheet">
+</head>
+
+<body onload="init()">
+    <nav class="navbar navbar-expand-md bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Algorithm Finder</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                    <a class="nav-link active" aria-current="page">Create Grid and Select Algorthms</a>
+                    <img src="./icons/arrow-left-right.svg" alt="Next" width="20">
+                    <a class="nav-link disabled" aria-disabled="true">Simulate</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container text-center" id="body">
+        <div class="row align-items-start">
+            <div class="col-12" id="legend">
+                <img src="./icons/emoji-sunglasses.svg" alt="Start" width="22"
+                    height="22">&nbsp;&nbsp;Start&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/gem.svg" alt="Target" width="22"
+                    height="22">&nbsp;&nbsp;Target&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/square.svg" alt="Unvisited" width="22"
+                    height="22">&nbsp;&nbsp;Unvisited&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/square-fill.svg" alt="Visited" width="22"
+                    height="22">&nbsp;&nbsp;Visited&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/arrow-right-square-fill.svg" alt="Path" width="22"
+                    height="22">&nbsp;&nbsp;Path&nbsp;&nbsp;&nbsp;&nbsp;
+            </div>
+            <div class="col-2" id="settings">
+                <ul class="list-group" id="step1">
+                    <li class="list-group-item" id="step1prompt">1. Create Grid</li>
+                    <li class="list-group-item" id="widthGroup">Width:&nbsp;&nbsp;<input type="number" id="width"
+                            class="gridSize" oninput="checkElementIsInt('width')"></li>
+                    <li class="list-group-item" id="heightGroup">Height&nbsp;&nbsp;<input type="number" id="height"
+                            class="gridSize" oninput="checkElementIsInt('height')"></li>
+                    <li class="list-group-item"><button class="btn btn-primary" id="createGrid"
+                            onclick="createGrid()">Create Grid!</button></li>
+                </ul>
+                <ul class="list-group" id="step2">
+                    <li class="list-group-item" id="step2prompt">2. Select Algorthm(s)</li>
+                    <li class="list-group-item">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="aStar">
+                        <label class="form-check-label" for="aStar">A* Search</label>
+                    </li>
+                    <li class="list-group-item">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="Dijkstra">
+                        <label class="form-check-label" for="Dijkstra">Dijkstra's Algorithm</label>
+                    </li>
+                    <li class="list-group-item">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="bfs">
+                        <label class="form-check-label" for="bfs">Breadth-first Search</label>
+                    </li>
+                    <li class="list-group-item">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="dfs">
+                        <label class="form-check-label" for="dfs">Depth-first Search</label>
+                    </li>
+                    <li class="list-group-item"><button class="btn btn-primary" id="createGrid"
+                            onclick="createGrid()">Create Grid!</button></li>
+                </ul>
+                <ul class="list-group" id="step3">
+
+                </ul>
+            </div>
+            <div class="col-10" id="gridPrview">
+
+            </div>
+
+            <div class="col-12" id="credit">
+                luotn © 2025 <a href=""><img src="./icons/github.svg" alt="github" width="22">Source Code</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
