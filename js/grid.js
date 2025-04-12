@@ -15,7 +15,6 @@ class Grid {
     }
 
     print() {
-        console.log(this.data)
         let result = "---Grid---\n" + 
             "key:\n" + 
             "- = unvisited\n" + 

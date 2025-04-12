@@ -49,13 +49,14 @@
                 <img src="./icons/arrow-right-square-fill.svg" alt="Path" width="22"
                     height="22">&nbsp;&nbsp;Path&nbsp;&nbsp;&nbsp;&nbsp; -->
             </div>
-            <div class="col-2" id="settings">
+            <div class="col-2 sticky-top" id="settings">
                 <ul class="list-group" id="step1">
                     <li class="list-group-item" id="step1prompt">
                         1. Create Grid<br>
                         <a class="settingsPrompt">
                             Width and height > 1<br>
-                            Size of grid > 2
+                            Size of grid > 2<br>
+                            Start and Target must be present
                         </a>
                     </li>
                     <li class="list-group-item" id="widthGroup">
@@ -97,9 +98,6 @@
                     </li>
                     <li class="list-group-item"><button class="btn btn-primary" id="simulate" onclick="simulate()"
                             disabled>Simulate!</button></li>
-                </ul>
-                <ul class="list-group" id="step3">
-
                 </ul>
             </div>
             <div class="col-10" id="gridPrview">

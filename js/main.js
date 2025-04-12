@@ -75,7 +75,9 @@ function createGrid() {
         cell.addEventListener("mouseenter", function() {
             cellClass = cell.getAttribute("class")
             if (holdingCell == "start" || holdingCell == "target") {
-                updateCell(cell, holdingCell)
+                if (cellClass == "unvisited") {
+                    updateCell(cell, holdingCell)
+                }
             } else if (holdingCell == "wall" || holdingCell == "unvisited") {
                 if (cellClass != "start" && cellClass != "target") {
                     updateCell(cell, holdingCell)
@@ -184,6 +186,6 @@ function simulate() {
         grid.setCell(wall, "wall")
     })
     sessionStorage.setItem("grid", JSON.stringify(grid))
-    sessionStorage.setItem("algorithms", algorithms)
-    grid.print()
+    sessionStorage.setItem("algorithms", JSON.stringify(algorithms))
+    console.log(`Simulation settings saved to session storage, proceeding to simulate...`)
 }
