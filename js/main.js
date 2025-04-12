@@ -7,14 +7,13 @@ let holdingCell = null
 let lastCellLocation = []
 let gridOK = false
 
-let algorthms = []
+let algorithms = []
 
 function createGrid() {
     width = parseInt(document.getElementById("width").value)
     height = parseInt(document.getElementById("height").value)
 
     // Draw grid
-    console.log(`Creating ${width} x ${height} grid...`)
     let result = `<table id="board">\n<tbody>\n`
     for (let y = 0; y < height; y++) {
         result += `<tr id="row ${y}">\n`
@@ -43,6 +42,9 @@ function createGrid() {
     document.getElementById(`${start[0]}-${start[1]}`).className = "start"
     document.getElementById(`${target[0]}-${target[1]}`).className = "target"
 
+    gridOK = true
+    updateButtons()
+
     // Add eventlisteners
     document.querySelectorAll('[role="cell"]').forEach(function(cell) {
         cell.addEventListener("mousedown", function(event) {
@@ -62,6 +64,8 @@ function createGrid() {
                         holdingCell = "unvisited"
                         cell.className = "unvisited"
                 }
+                gridOK = false
+                updateButtons()
             }
         })
 
@@ -106,21 +110,18 @@ function createGrid() {
                             walls[i] = getPosFromID(wallElements[i])
                         }
                     } catch (error) {
-                        walls = []   
+                        walls = []
                     }
-                    console.log(start)
-                    console.log(target)
-                    console.log(walls)
                     gridOK = true
+                    updateButtons()
                 } catch (error) {
                     alert(`Grid is missing start and/or target cell, click "Create Grid" to start over.`)
                     gridOK = false
+                    updateButtons()
                 }
             }
         })
     });
-
-    gridOK = true
 }
 
 function getPosFromID(element) {
@@ -146,13 +147,43 @@ function checkElementIsInt(element) {
     } else if (element == "height") {
         height = data
     }
+    gridOK = false
+    updateButtons()
+}
+
+function changeAlgorithm(algorithm) {
+    let index = algorithms.indexOf(algorithm)
+    if(index == -1) {
+        algorithms.push(algorithm)
+    } else {
+        algorithms.splice(index, 1)
+    }
+    updateButtons()
+}
+
+function updateButtons() {
     if (width != 0 && height != 0 && width * height > 1) {
         document.getElementById("createGrid").disabled = false
     } else {
         document.getElementById("createGrid").disabled = true
     }
+
+    if(gridOK && algorithms.length > 0) {
+        document.getElementById("simulate").disabled = false
+    } else {
+        document.getElementById("simulate").disabled = true
+    }
 }
 
-function addAlgorthim(algorthm) {
-    console.log(algorthm)
+function simulate() {
+    // Save simulation settings to session storage
+    let grid = new Grid(width, height)
+    grid.setCell(start, "start")
+    grid.setCell(target, "target")
+    walls.forEach(function(wall) {
+        grid.setCell(wall, "wall")
+    })
+    sessionStorage.setItem("grid", JSON.stringify(grid))
+    sessionStorage.setItem("algorithms", algorithms)
+    grid.print()
 }
