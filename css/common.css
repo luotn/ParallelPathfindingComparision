@@ -1,5 +1,5 @@
 @media (prefers-color-scheme: dark) {
-    body{
+    body {
         background-color: rgb(30, 33, 36);
         color: white;
     }
@@ -12,26 +12,28 @@
         filter: invert();
     }
 
-    #gridPrview{
+    #gridPrview {
         filter: invert();
+        color: black;
     }
 
-    #board td { 
+    #board td {
         border: 1px solid gray;
     }
 }
 
 @media (prefers-color-scheme: light) {
-    body{
+    body {
         background-color: rgb(238, 238, 238);
         color: black;
     }
 
-    a, a:hover{
+    a,
+    a:hover {
         color: black;
     }
 
-    #board td { 
+    #board td {
         border: 1px solid gray;
     }
 }
@@ -51,7 +53,7 @@ a {
     width: 80px;
 }
 
-#board td{
+#board td {
     min-width: 25px;
     width: 25px;
     height: 25px;
@@ -70,6 +72,7 @@ a {
 
 #legend {
     margin-bottom: 2vw;
+    vertical-align: text-bottom;
 }
 
 .list-group {

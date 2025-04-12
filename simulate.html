@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algorithm Finder</title>
+    <title>Algorithm Finder - Simulate</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
     <link href="css/common.css" rel="stylesheet">
-    <script src="js/index.js"></script>
     <script src="js/grid.js"></script>
 </head>
 
@@ -22,9 +21,9 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                 <div class="navbar-nav">
-                    <a class="nav-link active" aria-current="page">Create Grid and Select Algorthms</a>
+                    <a class="nav-link disabled" aria-disabled="true">Create Grid and Select Algorthms</a>
                     <img src="./icons/arrow-left-right.svg" alt="Next" width="18">
-                    <a class="nav-link disabled" aria-disabled="true">Simulate</a>
+                    <a class="nav-link active" aria-current="page">Simulate</a>
                 </div>
             </div>
         </div>
@@ -37,10 +36,14 @@
                 &nbsp;&nbsp;Start&nbsp;&nbsp;&nbsp;&nbsp;
                 <img src="./icons/gem.svg" alt="Target" width="18" height="18" class="svgs">
                 &nbsp;&nbsp;Target&nbsp;&nbsp;&nbsp;&nbsp;
-                <img src="./icons/mouse-left-button.svg" alt="MouseLeft" width="18" height="18" class="svgs">
-                &nbsp;+&nbsp;
-                <img src="./icons/arrows-move.svg" alt="Move" width="18" height="18" class="svgs">
-                &nbsp;&nbsp;Edit Cell&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/square.svg" alt="Unvisited" width="18" height="18" class="svgs">
+                &nbsp;&nbsp;Unvisited&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/square-fill.svg" alt="Visited" width="18"height="18" class="svgs">
+                &nbsp;&nbsp;Visited&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/arrow-right-square-fill.svg" alt="Path" width="18" height="18" class="svgs">
+                &nbsp;&nbsp;Path&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/x-square-fill.svg" alt="Wall" width="18" height="18" class="svgs">
+                &nbsp;&nbsp;Wall&nbsp;&nbsp;&nbsp;&nbsp;
             </div>
             <div class="col-2 sticky-top" id="settings">
                 <ul class="list-group" id="step1">
