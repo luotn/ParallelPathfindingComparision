@@ -10,7 +10,7 @@
     <link href="css/common.css" rel="stylesheet">
 </head>
 
-<body onload="init()">
+<body>
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">Algorithm Finder</a>
@@ -31,31 +31,54 @@
     <div class="container text-center" id="body">
         <div class="row align-items-start">
             <div class="col-12" id="legend">
-                <img src="./icons/emoji-sunglasses.svg" alt="Start" width="22"
-                    height="22">&nbsp;&nbsp;Start&nbsp;&nbsp;&nbsp;&nbsp;
-                <img src="./icons/gem.svg" alt="Target" width="22"
-                    height="22">&nbsp;&nbsp;Target&nbsp;&nbsp;&nbsp;&nbsp;
-                <img src="./icons/square.svg" alt="Unvisited" width="22"
+                <img src="./icons/emoji-sunglasses.svg" alt="Start" width="22" height="22" class="svgs">
+                &nbsp;&nbsp;Start&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/gem.svg" alt="Target" width="22" height="22" class="svgs">
+                &nbsp;&nbsp;Target&nbsp;&nbsp;&nbsp;&nbsp;
+                <img src="./icons/mouse-left-button.svg" alt="MouseLeft" width="22" height="22" class="svgs">
+                &nbsp;+&nbsp;
+                <img src="./icons/arrows-move.svg" alt="Move" width="22" height="22" class="svgs">
+                &nbsp;&nbsp;Edit Cell&nbsp;&nbsp;&nbsp;&nbsp;
+                <!-- Move to simulate -->
+                <!-- <img src="./icons/square.svg" alt="Unvisited" width="22"
                     height="22">&nbsp;&nbsp;Unvisited&nbsp;&nbsp;&nbsp;&nbsp;
                 <img src="./icons/square-fill.svg" alt="Visited" width="22"
                     height="22">&nbsp;&nbsp;Visited&nbsp;&nbsp;&nbsp;&nbsp;
                 <img src="./icons/arrow-right-square-fill.svg" alt="Path" width="22"
-                    height="22">&nbsp;&nbsp;Path&nbsp;&nbsp;&nbsp;&nbsp;
+                    height="22">&nbsp;&nbsp;Path&nbsp;&nbsp;&nbsp;&nbsp; -->
             </div>
             <div class="col-2" id="settings">
                 <ul class="list-group" id="step1">
-                    <li class="list-group-item" id="step1prompt">1. Create Grid</li>
-                    <li class="list-group-item" id="widthGroup">Width:&nbsp;&nbsp;<input type="number" id="width"
-                            class="gridSize" oninput="checkElementIsInt('width')"></li>
-                    <li class="list-group-item" id="heightGroup">Height&nbsp;&nbsp;<input type="number" id="height"
-                            class="gridSize" oninput="checkElementIsInt('height')"></li>
-                    <li class="list-group-item"><button class="btn btn-primary" id="createGrid"
-                            onclick="createGrid()">Create Grid!</button></li>
+                    <li class="list-group-item" id="step1prompt">
+                        1. Create Grid<br>
+                        <a class="settingsPrompt">
+                            Width and height > 1<br>
+                            Size of grid > 2
+                        </a>
+                    </li>
+                    <li class="list-group-item" id="widthGroup">
+                        Width:&nbsp;&nbsp;
+                        <input type="number" id="width" class="gridSize" oninput="checkElementIsInt('width')">
+                    </li>
+                    <li class="list-group-item" id="heightGroup">
+                        Height&nbsp;&nbsp;
+                        <input type="number" id="height" class="gridSize" oninput="checkElementIsInt('height')">
+                    </li>
+                    <li class="list-group-item">
+                        <button class="btn btn-primary" id="createGrid" onclick="createGrid()" disabled>
+                            Create Grid!
+                        </button>
+                    </li>
                 </ul>
                 <ul class="list-group" id="step2">
-                    <li class="list-group-item" id="step2prompt">2. Select Algorthm(s)</li>
+                    <li class="list-group-item" id="step2prompt">
+                        2. Select Algorthm(s)<br>
+                        <a class="settingsPrompt">
+                            Select at least 1 algorithm
+                        </a>
+                    </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="aStar">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="aStar" onchange="addAlgorthim('aStar')">
                         <label class="form-check-label" for="aStar">A* Search</label>
                     </li>
                     <li class="list-group-item">
@@ -70,8 +93,8 @@
                         <input class="form-check-input me-1" type="checkbox" value="" id="dfs">
                         <label class="form-check-label" for="dfs">Depth-first Search</label>
                     </li>
-                    <li class="list-group-item"><button class="btn btn-primary" id="createGrid"
-                            onclick="createGrid()">Create Grid!</button></li>
+                    <li class="list-group-item"><button class="btn btn-primary" id="createGrid" onclick="simulate()"
+                            disabled>Simulate!</button></li>
                 </ul>
                 <ul class="list-group" id="step3">
 
@@ -82,7 +105,9 @@
             </div>
 
             <div class="col-12" id="credit">
-                luotn © 2025 <a href=""><img src="./icons/github.svg" alt="github" width="22">Source Code</a>
+                luotn © 2025 &nbsp;&nbsp;&nbsp;&nbsp;<a href="https://github.com/luotn/ParallelPathfindingComparision"
+                    target="_blank">Source Code on <img src="./icons/github.svg" alt="github" width="18"
+                        style="vertical-align: text-bottom;" class="svgs"></a>
             </div>
         </div>
     </div>
