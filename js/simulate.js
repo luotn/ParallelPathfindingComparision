@@ -6,6 +6,8 @@ let benchmark = null
 let benchmarkResult = {}
 const warmups = 3
 const benchmarkTimes = 1000
+let maxStep = 0
+let currentStep = 0
 
 function init() {
     let gridString = sessionStorage.getItem("grid")
@@ -22,7 +24,6 @@ function init() {
     grid.height = plainObj.height
     grid.width = plainObj.width
     grid.data = plainObj.data
-    grid.print()
 
     // Reconstuct algorithms from session storage
     algorithms = JSON.parse(algorithmString)
@@ -35,8 +36,7 @@ function init() {
                     <li class="list-group-item" id="benchmarkResult">
                         Benchmark Result<br>
                     </li>`
-        for (let i = 0; i < algorithms.length; i++) {
-            let algorithm = algorithms[i]
+        for (let algorithm of algorithms) {
             result += `
                     <li class="list-group-item">
                         ${algorithm} ${benchmarkResult[algorithm].avgTime}μs
@@ -47,54 +47,122 @@ function init() {
     }
 
     console.log(stepHistory)
-    
-    constructVisuals()
 
-    // Add window event listener
-    window.addEventListener("keydown", function (event) {
+    constructVisuals()
+    addEventListeners()
+}
+
+// Add window event listener
+function addEventListeners() {
+     window.addEventListener("keydown", function (event) {
         switch (event.key) {
             case "a":
-                console.log("Stepping back...")
+                if (currentStep - 1 >= 0) {
+                    currentStep--
+                    updateEverything()
+                }
                 break
             case "d":
-                console.log("Stepping forward...")
-                break
-            case "w":
-                console.log("Rewinding...")
+                if (currentStep + 1 <= maxStep) {
+                    currentStep++
+                    updateEverything()
+                }
                 break
             case "s":
-                console.log("Fast Forwarding...")
+                currentStep = 0
+                updateEverything()
+                break
+            case "w":
+                currentStep = maxStep
+                updateEverything()
                 break
             case "q":
                 console.log("Starting interval...")
                 break
             case "r":
-                console.log("Performing hard reset...")
+                location.reload()
                 break
         }
+
     })
+}
+
+function toggleInterval() {
+    
+}
+
+function updateEverything() {
+    // Reset visuals
+    constructVisuals()
+    updateVisuals()
+    updateProgressBar()
+}
+
+// Update algorithm results
+function updateVisuals() {
+    for(let algorithm of algorithms) {
+        let algorithmSteps = stepHistory[algorithm].steps.length
+        // Get step to render, last step if current step exceeds algorithm total steps
+        let renderStep = currentStep < algorithmSteps - 1 ? currentStep: algorithmSteps - 1
+        // Render all steps before target step
+        for(let step = 1; step <= renderStep; step++) {
+            let currentCell = stepHistory[algorithm].steps[step]
+            let nextCell = stepHistory[algorithm].steps[step + 1]
+            if (nextCell !== undefined) {
+                let direction = findDirection(currentCell, nextCell)
+                document.querySelector(`table.board.${algorithm} td[id="${currentCell[0]}-${currentCell[1]}"]`).setAttribute("class", direction)
+                try {
+                    document.querySelector(`table.board.${algorithm} td[class="targetReached"]`).setAttribute("class", "target")
+                } catch (error) {
+                    
+                }
+            } else {
+                document.querySelector(`table.board.${algorithm} td[class="target"]`).setAttribute("class", "targetReached")
+            }
+        }
+    }
+}
+
+// Find which direction the path icon should face
+function findDirection(currentCell, nextCell) {
+    if (currentCell[0] < nextCell[0])
+        return "pathRight"
+    else if (currentCell[0] > nextCell[0])
+        return "pathLeft"
+    else if (currentCell[1] < nextCell[1])
+        return "pathDown"
+    else if (currentCell[1] > nextCell[1])
+        return "pathUp"
+    else
+        alert("Error in path!!!")
+}
+
+// Update progress bar
+function updateProgressBar() {
+    document.getElementById("stepProgressBG").setAttribute("aria-valuenow", `${currentStep}`)
+    document.getElementById("stepProgress").setAttribute("style", `width: ${currentStep / maxStep * 100}%`)
+    document.getElementById("stepProgress").innerHTML = `Step ${currentStep}/${maxStep}`
 }
 
 // Visualise result
 function constructVisuals() {
     // Find largest steps
-    let maxStep = 0
     for (const algorithm of algorithms) {
-        const algorithmStep = stepHistory[algorithm].steps.length
+        const algorithmStep = stepHistory[algorithm].steps.length - 1
         maxStep = algorithmStep > maxStep ? algorithmStep : maxStep
     }
     let visualResult = `
-                <div class="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow="0" aria-valuemin="0" aria-valuemax="${maxStep}" id="stepProgress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%">Step 0/${maxStep}</div>
+                <div class="progress" role="progressbar" aria-label="Step Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="${maxStep}" id="stepProgressBG">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" id="stepProgress">Step 0/${maxStep}</div>
                 </div>\n`
 
     // Add visual for each algorithm
     for (const algorithm of algorithms) {
         // Statistics
-        visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length} steps in ${stepHistory[algorithm].time}ms.`
+        visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${stepHistory[algorithm].time}ms.`
 
         // Draw initial grid
-        visualResult += `<table id="${algorithm}" class="board">\n<tbody>\n`
+        visualResult += `<table class="board ${algorithm}">\n<tbody>\n`
         for (let y = 0; y < grid.height; y++) {
             visualResult += `<tr id="row ${y}">\n`
             for (let x = 0; x < grid.width; x++) {
@@ -110,8 +178,7 @@ function constructVisuals() {
 
 function runBenchmark() {
     // Run benchmark and save times to benchmarkResult
-    for (let i = 0; i < algorithms.length; i++) {
-        let algorithm = algorithms[i]
+    for (let algorithm of algorithms) {
         let totalTime = 0
 
         // Warmup
@@ -121,7 +188,7 @@ function runBenchmark() {
         }
 
         // Run benchmark
-        for (let i = 0; i < benchmarkTimes; i++) {
+        for (let j = 0; j < benchmarkTimes; j++) {
             let newGrid = cloneGrid(grid)
             const startTime = performance.now()
             runAlgorithm(algorithm, newGrid)
@@ -135,9 +202,7 @@ function runBenchmark() {
 
 function runAlgorithms() {
     // Run algorithm and save step history to stepHistory
-    for (let i = 0; i < algorithms.length; i++) {
-        let algorithm = algorithms[i]
-
+    for (let algorithm of algorithms) {
         // Prepare to run algorithm
         stepHistory[algorithm] = { time: 0, steps: [] }
         let newGrid = cloneGrid(grid)
@@ -159,7 +224,7 @@ function runAlgorithms() {
 function runAlgorithm(algorithm, newGrid) {
     let simulator = null
     switch (algorithm) {
-        case "A*":
+        case "AStar":
             simulator = new AStar(newGrid)
             break
         case "Dijkstra":
@@ -172,9 +237,8 @@ function runAlgorithm(algorithm, newGrid) {
             simulator = new DFS(newGrid)
             break
     }
-    if (simulator != null) {
+    if (simulator != null)
         return simulator.run()
-    }
 }
 
 // Deep copy grid

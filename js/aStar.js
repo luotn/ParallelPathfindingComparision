@@ -27,9 +27,8 @@ class AStar {
             const [currentX, currentY] = current
 
             // Arrived
-            if (currentX === target[0] && currentY === target[1]) {
+            if (currentX === target[0] && currentY === target[1])
                 return this._constructPath(current)
-            }
 
             // Explore 4 directions
             for (const dir of this.directions) {
@@ -44,18 +43,14 @@ class AStar {
                 const tentativeGScore = this.gScore[`${currentX},${currentY}`] + 1
 
                 // Update if new route has lower score
-                if (
-                    this.gScore[nextKey] === undefined ||
-                    tentativeGScore < this.gScore[nextKey]
-                ) {
+                if (this.gScore[nextKey] === undefined || tentativeGScore < this.gScore[nextKey]) {
                     this.parent[nextKey] = [currentX, currentY]
                     this.gScore[nextKey] = tentativeGScore
                     const fScore = tentativeGScore + this.grid.taxiCabDistanceToTarget(nextPos)
 
                     // Avoid duplications
-                    if (!this.priorityQueue.some(item => item.pos[0] === nextX && item.pos[1] === nextY)) {
+                    if (!this.priorityQueue.some(item => item.pos[0] === nextX && item.pos[1] === nextY))
                         this.priorityQueue.push({ pos: nextPos, fScore })
-                    }
                 }
             }
         }

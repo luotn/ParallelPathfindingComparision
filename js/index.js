@@ -75,13 +75,12 @@ function createGrid() {
         cell.addEventListener("mouseenter", function() {
             cellClass = cell.getAttribute("class")
             if (holdingCell == "start" || holdingCell == "target") {
-                if (cellClass == "unvisited") {
+                if (cellClass == "unvisited")
                     updateCell(cell, holdingCell)
-                }
-            } else if (holdingCell == "wall" || holdingCell == "unvisited") {
-                if (cellClass != "start" && cellClass != "target") {
+            }
+            else if (holdingCell == "wall" || holdingCell == "unvisited") {
+                if (cellClass != "start" && cellClass != "target")
                     updateCell(cell, holdingCell)
-                }
             }
         })
 
@@ -90,11 +89,10 @@ function createGrid() {
         // Hold save sction until mouse up
         cell.addEventListener("mouseleave", function() {
             cellClass = cell.getAttribute("class")
-            if (cellClass == "start" && holdingCell == "start") {
+            if (cellClass == "start" && holdingCell == "start")
                 updateCell(cell, "unvisited")
-            } else if (cellClass == "target" && holdingCell == "target") {
+            else if (cellClass == "target" && holdingCell == "target")
                 updateCell(cell, "unvisited")
-            }
         })
 
         // Save the current grid settings to global variable
@@ -144,37 +142,34 @@ function checkElementIsInt(element) {
     } else {
         document.getElementById(element + "Group").className = "list-group-item"
     }
-    if (element == "width") {
+    if (element == "width")
         width = data
-    } else if (element == "height") {
+    else if (element == "height")
         height = data
-    }
+
     gridOK = false
     updateButtons()
 }
 
 function changeAlgorithm(algorithm) {
     let index = algorithms.indexOf(algorithm)
-    if(index == -1) {
+    if(index == -1)
         algorithms.push(algorithm)
-    } else {
+    else
         algorithms.splice(index, 1)
-    }
     updateButtons()
 }
 
 function updateButtons() {
-    if (width != 0 && height != 0 && width * height > 1) {
+    if (width != 0 && height != 0 && width * height > 1)
         document.getElementById("createGrid").disabled = false
-    } else {
+    else
         document.getElementById("createGrid").disabled = true
-    }
 
-    if(gridOK && algorithms.length > 0) {
+    if(gridOK && algorithms.length > 0)
         document.getElementById("simulate").disabled = false
-    } else {
+    else
         document.getElementById("simulate").disabled = true
-    }
 }
 
 function simulate() {
@@ -189,11 +184,10 @@ function simulate() {
     sessionStorage.setItem("algorithms", JSON.stringify(algorithms))
 
     // Save benchmark settings to sessionStorage
-    if(document.getElementById("benchmark").checked) {
+    if(document.getElementById("benchmark").checked)
         sessionStorage.setItem("benchmark", true)
-    } else {
+    else
         sessionStorage.setItem("benchmark", false)
-    }
     console.log(`Simulation settings saved to session storage, proceeding to simulate...`)
     window.location.href = "./simulate.html"
 }

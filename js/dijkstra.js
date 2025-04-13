@@ -25,9 +25,8 @@ class Dijkstra {
             const [currentX, currentY] = current.pos
 
             // 到达目标点
-            if (currentX === target[0] && currentY === target[1]) {
+            if (currentX === target[0] && currentY === target[1])
                 return this._constructPath([currentX, currentY])
-            }
 
             // 探索四个方向
             for (const dir of this.directions) {
@@ -42,10 +41,7 @@ class Dijkstra {
                 const tentativeDistance = this.distances[`${currentX},${currentY}`] + 1
 
                 // 如果新路径更优，则更新
-                if (
-                    this.distances[nextKey] === undefined ||
-                    tentativeDistance < this.distances[nextKey]
-                ) {
+                if (this.distances[nextKey] === undefined || tentativeDistance < this.distances[nextKey]) {
                     this.distances[nextKey] = tentativeDistance
                     this.parent[nextKey] = [currentX, currentY]
                     this.priorityQueue.push({ pos: nextPos, distance: tentativeDistance })
