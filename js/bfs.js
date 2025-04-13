@@ -12,7 +12,7 @@ class BFS {
         const start = this.grid.start
         const target = this.grid.target
 
-        // Init queue, visted cells and parent cell
+        // Init queue and parent cell
         this.queue.push(start)
         this.parent[`${start[0]}, ${start[1]}`] = null
 

@@ -138,7 +138,7 @@ function runAlgorithm(algorithm, newGrid) {
             simulator = new BFS(newGrid)
             break
         case "DFS":
-            console.log("DFS not Implemented, yet...")
+            simulator = new DFS(newGrid)
             break
     }
     if (simulator != null) {
