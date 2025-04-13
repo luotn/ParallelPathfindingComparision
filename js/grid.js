@@ -35,12 +35,14 @@ class GRID {
     }
 
     setCell(pos, value) {
-        let col = pos[0]
-        let row = pos[1]
-        this.data[row * this.width + col] = value
+        this.data[pos[1] * this.width + pos[0]] = value
     }
 
-    getCell(pos, direction) {
+    getCell(pos) { 
+        return this.data[pos[1] * this.width + pos[0]]
+    }
+
+    getCellAt(pos, direction) {
         let col = pos[0]
         let row = pos[1]
         let currentIndex = row * this.width + col
@@ -76,9 +78,7 @@ class GRID {
     }
 
     taxiCabDistanceToTarget(pos) {
-        let col = pos[0]
-        let row = pos[1]
-        return Math.abs(col - this.target[0]) + Math.abs(row - this.target[1])
+        return Math.abs(pos[0] - this.target[0]) + Math.abs(pos[1] - this.target[1])
     }
 
     print() {

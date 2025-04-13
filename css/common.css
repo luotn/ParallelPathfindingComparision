@@ -12,12 +12,12 @@
         filter: invert();
     }
 
-    #gridPrview {
+    #gridPrview td{
         filter: invert();
         color: black;
     }
 
-    #board td {
+    .board td {
         border: 1px solid gray;
     }
 }
@@ -32,7 +32,7 @@
         color: black;
     }
 
-    #board td {
+    .board td {
         border: 1px solid gray;
     }
 }
@@ -52,7 +52,11 @@ a {
     width: 80px;
 }
 
-#board td {
+.board {
+    margin-bottom: 20px;
+}
+
+.board td {
     min-width: 25px;
     width: 25px;
     height: 25px;
@@ -60,6 +64,7 @@ a {
 
 #gridPrview {
     overflow: auto;
+    text-align: left;
 }
 
 #legend .unvisited {

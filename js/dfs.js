@@ -27,7 +27,7 @@ class DFS {
 
             // Explore 4 directions
             for (const dir of this.directions) {
-                const [cellState, nextPos] = this.grid.getCell(current, dir)
+                const [cellState, nextPos] = this.grid.getCellAt(current, dir)
                 const [nextX, nextY] = nextPos
 
                 // Check if new cell is unvisited

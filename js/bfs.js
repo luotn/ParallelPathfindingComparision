@@ -29,7 +29,7 @@ class BFS {
             // Explore 4 directions
             for (const dir of this.directions) {
                 // Check if new cell is unvisited
-                const [cellState, nextPos] = this.grid.getCell(current, dir)
+                const [cellState, nextPos] = this.grid.getCellAt(current, dir)
                 if (cellState == "unvisited" || cellState == "target") {
                     this.grid.setCell(nextPos, "visited")
                     this.queue.push(nextPos)

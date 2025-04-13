@@ -14,7 +14,7 @@ function createGrid() {
     height = parseInt(document.getElementById("height").value)
 
     // Draw grid
-    let result = `<table id="board">\n<tbody>\n`
+    let result = `<table class="board">\n<tbody>\n`
     for (let y = 0; y < height; y++) {
         result += `<tr id="row ${y}">\n`
         for (let x = 0; x < width; x++) {

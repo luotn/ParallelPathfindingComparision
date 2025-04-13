@@ -5,3 +5,8 @@
     padding: 2px;
     vertical-align: middle;
 }
+
+#stepProgress {
+    --bs-progress-bg: gray;
+    margin-right: 15px;
+}
