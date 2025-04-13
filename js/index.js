@@ -179,13 +179,21 @@ function updateButtons() {
 
 function simulate() {
     // Save simulation settings to session storage
-    let grid = new Grid(width, height)
+    let grid = new GRID(width, height)
     grid.setCell(start, "start")
     grid.setCell(target, "target")
-    walls.forEach(function(wall) {
+    walls.forEach(wall => {
         grid.setCell(wall, "wall")
     })
     sessionStorage.setItem("grid", JSON.stringify(grid))
     sessionStorage.setItem("algorithms", JSON.stringify(algorithms))
+
+    // Save benchmark settings to sessionStorage
+    if(document.getElementById("benchmark").checked) {
+        sessionStorage.setItem("benchmark", true)
+    } else {
+        sessionStorage.setItem("benchmark", false)
+    }
     console.log(`Simulation settings saved to session storage, proceeding to simulate...`)
+    window.location.href = "./simulate.html"
 }

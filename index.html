@@ -15,7 +15,7 @@
 <body>
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Algorithm Finder</a>
+            <a class="navbar-brand" href="./index.html">Algorithm Finder</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -68,26 +68,35 @@
                 </ul>
                 <ul class="list-group" id="step2">
                     <li class="list-group-item" id="step2prompt">
-                        2. Select Algorithm(s)<br>
+                        2. Additional Features
+                    </li>
+                    <li class="list-group-item">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="benchmark">
+                        <label class="form-check-label" for="benchmark">Benchmark (x 1000)</label>
+                    </li>
+                </ul>
+                <ul class="list-group" id="step3">
+                    <li class="list-group-item" id="step3prompt">
+                        3. Select Algorithm(s)<br>
                         <a class="settingsPrompt">
                             Select at least 1 algorithm
                         </a>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="aStar" onchange="changeAlgorithm('aStar')">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="aStar" onchange="changeAlgorithm('A*')">
                         <label class="form-check-label" for="aStar">A* Search</label>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="Dijkstra" onchange="changeAlgorithm('Dijkstra')">
-                        <label class="form-check-label" for="Dijkstra">Dijkstra's Algorithm</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" id="dijkstra" onchange="changeAlgorithm('Dijkstra')">
+                        <label class="form-check-label" for="dijkstra">Dijkstra's Algorithm</label>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="bfs" onchange="changeAlgorithm('bfs')">
-                        <label class="form-check-label" for="bfs">Breadth-first Search</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" id="bfs" onchange="changeAlgorithm('BFS')">
+                        <label class="form-check-label" for="bfs">Breadth-first Search (BFS)</label>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="dfs" onchange="changeAlgorithm('dfs')">
-                        <label class="form-check-label" for="dfs">Depth-first Search</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" id="dfs" onchange="changeAlgorithm('DFS')">
+                        <label class="form-check-label" for="dfs">Depth-first Search (DFS)</label>
                     </li>
                     <li class="list-group-item"><button class="btn btn-primary" id="simulate" onclick="simulate()"
                             disabled>Simulate!</button></li>
