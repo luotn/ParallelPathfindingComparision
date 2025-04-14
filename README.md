@@ -3,7 +3,8 @@ This is the dissertation project for Luotn in KCL
 
 Features:
  - [x] Dark Mode
- - [ ] Share Link
+ - [x] Share Link
+ - [ ] Edit simulated grid
 
 Todo list
  - [x] Fix progress bar animation

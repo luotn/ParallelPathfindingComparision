@@ -12,10 +12,43 @@ let playBackID
 let cellReferences
 let lastRenderedStep = 0
 
+// luotn's github pages host
+// let domain = "https://luotn.github.io/ParallelPathfindingComparision"
+
+// host locally
+let domain = "http://127.0.0.1:5500"
+
 function init() {
-    let gridString = sessionStorage.getItem("grid")
-    let algorithmString = sessionStorage.getItem("algorithms")
-    benchmark = sessionStorage.getItem("benchmark")
+    let urlQuery = window.location.search.substring(1)
+    let gridString
+    let algorithmString
+    // Load share link if found, otherwise load session storage
+    if (urlQuery.length > 0) {
+        let queries = urlQuery.split("&")
+        for (var i = 0; i < queries.length; i++) {
+            var keyValuePair = queries[i].split('=')
+            switch (keyValuePair[0]) {
+                case "grid":
+                    gridString = decodeURI(keyValuePair[1])
+                    sessionStorage.setItem("grid", gridString)
+                    break
+                case "algorithms":
+                    algorithmString = decodeURI(keyValuePair[1])
+                    sessionStorage.setItem("algorithms", algorithmString)
+                    break
+                case "benchmark":
+                    benchmark = decodeURI(keyValuePair[1])
+                    sessionStorage.setItem("benchmark", benchmark)
+                    break
+            }
+        }
+        history.replaceState(null, "Algorithm Finder - Simulate", "?");
+    } else {
+        gridString = sessionStorage.getItem("grid")
+        algorithmString = sessionStorage.getItem("algorithms")
+        benchmark = sessionStorage.getItem("benchmark")
+    }
+
     // Redirect to index if missing setting(s)
     if (gridString == undefined || algorithmString == undefined || benchmark == null) {
         alert("Simulation data not missing!\nRedirecting to index page...")
@@ -140,7 +173,7 @@ function updateVisuals() {
         let algorithmSteps = stepHistory[algorithm].steps.length
         // Get step to render, last step if current step exceeds algorithm total steps
         let renderStep = currentStep < algorithmSteps - 1 ? currentStep : algorithmSteps - 1
-        const {steps, directions} = stepHistory[algorithm]
+        const { steps, directions } = stepHistory[algorithm]
 
         // Calculate steps to render
         const startStep = Math.min(lastRenderedStep, renderStep)
@@ -152,7 +185,7 @@ function updateVisuals() {
 
         for (let step = startStep + 1; step <= endStep; step++) {
             const [x, y] = steps[step]
-            if(forwarding) {
+            if (forwarding) {
                 cellReferences[algorithm][y * grid.width + x].className = directions[step]
             } else {
                 cellReferences[algorithm][y * grid.width + x].className = "unvisited"
@@ -322,4 +355,10 @@ function updateSpeed() {
     // Deal with flot precision problem
     speed = Math.round(1.0 * 100 - speedRaw * 100) / 100
     document.getElementById("speedPrompt").innerHTML = `Step Interval: ${speed}s`
+}
+
+function share() {
+    let resultURL = `${domain}/simulate.html?grid=${sessionStorage.getItem("grid")}&algorithms=${sessionStorage.getItem("algorithms")}&benchmark=${sessionStorage.getItem("benchmark")}`
+    navigator.clipboard.writeText(resultURL)
+    document.getElementById("share").innerHTML = `<img src="./icons/clipboard-check.svg" alt="Start" width="23" height="23" class="svgs" style="align-self: last baseline;">&nbsp;&nbsp;Copied!`
 }
