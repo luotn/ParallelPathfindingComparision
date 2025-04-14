@@ -13,10 +13,10 @@ let cellReferences
 let lastRenderedStep = 0
 
 // luotn's github pages host
-// let domain = "https://luotn.github.io/ParallelPathfindingComparision"
+let domain = "https://luotn.github.io/ParallelPathfindingComparision"
 
 // host locally
-let domain = "http://127.0.0.1:5500"
+// let domain = "http://127.0.0.1:5500"
 
 function init() {
     let urlQuery = window.location.search.substring(1)
