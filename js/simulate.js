@@ -8,7 +8,7 @@ const warmups = 3
 const benchmarkTimes = 1000
 let maxStep = 0
 let currentStep = 0
-let playBackID;
+let playBackID
 
 function init() {
     let gridString = sessionStorage.getItem("grid")
@@ -17,7 +17,7 @@ function init() {
     // Redirect to index if missing setting(s)
     if (gridString == undefined || algorithmString == undefined || benchmark == null) {
         alert("Simulation data not missing!\nRedirecting to index page...")
-        window.location.replace("./index.html");
+        window.location.replace("./index.html")
     }
 
     // Reconstruct grid from session storage
@@ -75,7 +75,8 @@ function addEventListeners() {
                 }
                 break
             case "r":
-                location.reload()
+                this.sessionStorage.clear()
+                window.location.replace("./index.html")
                 break
         }
 
@@ -277,13 +278,13 @@ function runAlgorithm(algorithm, newGrid) {
 
 // Deep copy grid
 function cloneGrid(original) {
-    const grid = new GRID(original.width, original.height);
+    const grid = new GRID(original.width, original.height)
 
     grid.data = structuredClone(original.data)
     grid.start = structuredClone(original.start)
     grid.target = structuredClone(original.target)
 
-    return grid;
+    return grid
 }
 
 function updateSpeed() {

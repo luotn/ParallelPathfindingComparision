@@ -1,5 +1,5 @@
-let width = 0;
-let height = 0;
+let width = 0
+let height = 0
 let walls = []
 let start = [0, 0]
 let target = [0, 0]
@@ -121,7 +121,7 @@ function createGrid() {
                 }
             }
         })
-    });
+    })
 }
 
 function getPosFromID(element) {
