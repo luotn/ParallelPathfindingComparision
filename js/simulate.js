@@ -8,6 +8,7 @@ const warmups = 3
 const benchmarkTimes = 1000
 let maxStep = 0
 let currentStep = 0
+let playBackID;
 
 function init() {
     let gridString = sessionStorage.getItem("grid")
@@ -46,38 +47,32 @@ function init() {
         document.getElementById("benchmarks").innerHTML = result
     }
 
-    console.log(stepHistory)
-
     constructVisuals()
     addEventListeners()
 }
 
 // Add window event listener
 function addEventListeners() {
-     window.addEventListener("keydown", function (event) {
+    window.addEventListener("keydown", function (event) {
         switch (event.key) {
             case "a":
-                if (currentStep - 1 >= 0) {
-                    currentStep--
-                    updateEverything()
-                }
+                handleStepBack()
                 break
             case "d":
-                if (currentStep + 1 <= maxStep) {
-                    currentStep++
-                    updateEverything()
-                }
+                handleStepForward()
                 break
             case "s":
-                currentStep = 0
-                updateEverything()
+                handleRewind()
                 break
             case "w":
-                currentStep = maxStep
-                updateEverything()
+                handleForward()
                 break
             case "q":
-                console.log("Starting interval...")
+                if (playBackID === null) {
+                    startPlayback()
+                } else {
+                    stopPlayback()
+                }
                 break
             case "r":
                 location.reload()
@@ -87,8 +82,47 @@ function addEventListeners() {
     })
 }
 
-function toggleInterval() {
-    
+function startPlayback() {
+    document.getElementById("playBackIcon").src = "./icons/pause-fill.svg"
+    document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
+    document.getElementById("playBackText").innerHTML = `Rewind(S) &nbsp;&nbsp; Pause(Q) &nbsp;&nbsp; Foward(W)`
+    if(!playBackID) {
+        playBackID = setInterval(handleStepForward, 1000 * speed)
+    }
+}
+
+function stopPlayback() {
+    clearInterval(playBackID)
+    playBackID = null
+    document.getElementById("playBackIcon").src = "./icons/play-fill.svg"
+    document.getElementById("playBackIcon").setAttribute("onclick", "startPlayback()")
+    document.getElementById("playBackText").innerHTML = `Rewind(S) &nbsp;&nbsp; Start(Q) &nbsp;&nbsp; Foward(W)`
+}
+
+function handleForward() {
+    currentStep = maxStep
+    updateEverything()
+}
+
+function handleRewind() {
+    currentStep = 0
+    updateEverything()
+}
+
+function handleStepForward() {
+    if (currentStep + 1 <= maxStep) {
+        currentStep++
+        updateEverything()
+    } else {
+        stopPlayback()
+    }
+}
+
+function handleStepBack() {
+    if (currentStep - 1 >= 0) {
+        currentStep--
+        updateEverything()
+    }
 }
 
 function updateEverything() {
@@ -100,12 +134,12 @@ function updateEverything() {
 
 // Update algorithm results
 function updateVisuals() {
-    for(let algorithm of algorithms) {
+    for (let algorithm of algorithms) {
         let algorithmSteps = stepHistory[algorithm].steps.length
         // Get step to render, last step if current step exceeds algorithm total steps
-        let renderStep = currentStep < algorithmSteps - 1 ? currentStep: algorithmSteps - 1
+        let renderStep = currentStep < algorithmSteps - 1 ? currentStep : algorithmSteps - 1
         // Render all steps before target step
-        for(let step = 1; step <= renderStep; step++) {
+        for (let step = 1; step <= renderStep; step++) {
             let currentCell = stepHistory[algorithm].steps[step]
             let nextCell = stepHistory[algorithm].steps[step + 1]
             if (nextCell !== undefined) {
@@ -114,7 +148,7 @@ function updateVisuals() {
                 try {
                     document.querySelector(`table.board.${algorithm} td[class="targetReached"]`).setAttribute("class", "target")
                 } catch (error) {
-                    
+
                 }
             } else {
                 document.querySelector(`table.board.${algorithm} td[class="target"]`).setAttribute("class", "targetReached")
@@ -159,7 +193,7 @@ function constructVisuals() {
     // Add visual for each algorithm
     for (const algorithm of algorithms) {
         // Statistics
-        visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${stepHistory[algorithm].time}ms.`
+        visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${Math.round(stepHistory[algorithm].time)}ms.`
 
         // Draw initial grid
         visualResult += `<table class="board ${algorithm}">\n<tbody>\n`

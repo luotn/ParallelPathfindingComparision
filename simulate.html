@@ -62,22 +62,22 @@
                     </li>
                     <li class="list-group-item" id="widthGroup">
                         <img src="./icons/chevron-bar-left.svg" alt="stepBack" width="25" height="25"
-                            class="controlIcon">
+                            class="controlIcon" onclick="handleStepBack()">
                         &nbsp;&nbsp;&nbsp;&nbsp;
                         <img src="./icons/chevron-bar-right.svg" alt="stepForward" width="25" height="25"
-                            class="controlIcon"><br>
+                            class="controlIcon" onclick="handleStepForward()"><br>
                         <a class="settingsPrompt">
                             Step Back(A) &nbsp;&nbsp; Step Forward(D)<br>
                         </a>
                     </li>
                     <li class="list-group-item" id="heightGroup">
-                        <img src="./icons/rewind-fill.svg" alt="Rewind" width="25" height="25" class="controlIcon">
+                        <img src="./icons/rewind-fill.svg" alt="Rewind" width="25" height="25" class="controlIcon" onclick="handleRewind()">
                         &nbsp;&nbsp;
-                        <img src="./icons/play-fill.svg" alt="run" width="25" height="25" class="controlIcon">
+                        <img src="./icons/play-fill.svg" alt="run" width="25" height="25" class="controlIcon" onclick="startPlayback()" id="playBackIcon">
                         &nbsp;&nbsp;
                         <img src="./icons/fast-forward-fill.svg" alt="fastFoward" width="25" height="25"
-                            class="controlIcon"><br>
-                        <a class="settingsPrompt">
+                            class="controlIcon" onclick="handleForward()"><br>
+                        <a class="settingsPrompt" id="playBackText">
                             Rewind(S) &nbsp;&nbsp; Start(Q) &nbsp;&nbsp; Foward(W)
                         </a>
                     </li>
