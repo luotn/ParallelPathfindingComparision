@@ -9,6 +9,8 @@ const benchmarkTimes = 1000
 let maxStep = 0
 let currentStep = 0
 let playBackID
+let cellReferences
+let lastRenderedStep = 0
 
 function init() {
     let gridString = sessionStorage.getItem("grid")
@@ -87,7 +89,7 @@ function startPlayback() {
     document.getElementById("playBackIcon").src = "./icons/pause-fill.svg"
     document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
     document.getElementById("playBackText").innerHTML = `Rewind(S) &nbsp;&nbsp; Pause(Q) &nbsp;&nbsp; Foward(W)`
-    if(!playBackID) {
+    if (!playBackID) {
         playBackID = setInterval(handleStepForward, 1000 * speed)
     }
 }
@@ -127,8 +129,6 @@ function handleStepBack() {
 }
 
 function updateEverything() {
-    // Reset visuals
-    constructVisuals()
     updateVisuals()
     updateProgressBar()
 }
@@ -139,23 +139,31 @@ function updateVisuals() {
         let algorithmSteps = stepHistory[algorithm].steps.length
         // Get step to render, last step if current step exceeds algorithm total steps
         let renderStep = currentStep < algorithmSteps - 1 ? currentStep : algorithmSteps - 1
-        // Render all steps before target step
-        for (let step = 1; step <= renderStep; step++) {
-            let currentCell = stepHistory[algorithm].steps[step]
-            let nextCell = stepHistory[algorithm].steps[step + 1]
-            if (nextCell !== undefined) {
-                let direction = findDirection(currentCell, nextCell)
-                document.querySelector(`table.board.${algorithm} td[id="${currentCell[0]}-${currentCell[1]}"]`).setAttribute("class", direction)
-                try {
-                    document.querySelector(`table.board.${algorithm} td[class="targetReached"]`).setAttribute("class", "target")
-                } catch (error) {
+        const {steps, directions} = stepHistory[algorithm]
 
-                }
+        // Calculate steps to render
+        const startStep = Math.min(lastRenderedStep, renderStep)
+        let endStep = Math.max(lastRenderedStep, renderStep)
+        const forwarding = renderStep - lastRenderedStep - 1 >= 0
+
+        // Cap endStep at algorithmSteps - 1
+        endStep = Math.min(endStep, algorithmSteps - 1)
+
+        for (let step = startStep + 1; step <= endStep; step++) {
+            const [x, y] = steps[step]
+            if(forwarding) {
+                cellReferences[algorithm][y * grid.width + x].className = directions[step]
             } else {
-                document.querySelector(`table.board.${algorithm} td[class="target"]`).setAttribute("class", "targetReached")
+                cellReferences[algorithm][y * grid.width + x].className = "unvisited"
             }
         }
+
+        // Update target cell
+        const [targetX, targetY] = grid.getTargetPos()
+        const targetCell = cellReferences[algorithm][targetY * grid.width + targetX]
+        targetCell.className = renderStep == algorithmSteps - 1 ? "targetReached" : "target"
     }
+    lastRenderedStep = currentStep
 }
 
 // Find which direction the path icon should face
@@ -209,6 +217,23 @@ function constructVisuals() {
     }
 
     document.getElementById("gridPrview").innerHTML = visualResult
+
+    saveReferences()
+}
+
+// Save cell references
+function saveReferences() {
+    cellReferences = {}
+    for (const algorithm of algorithms) {
+        cellReferences[algorithm] = []
+        const table = document.querySelector(`table.board.${algorithm}`)
+        for (let y = 0; y < grid.height; y++) {
+            const row = table.rows[y]
+            for (let x = 0; x < grid.width; x++) {
+                cellReferences[algorithm][y * grid.width + x] = row.cells[x]
+            }
+        }
+    }
 }
 
 function runBenchmark() {
@@ -239,7 +264,7 @@ function runAlgorithms() {
     // Run algorithm and save step history to stepHistory
     for (let algorithm of algorithms) {
         // Prepare to run algorithm
-        stepHistory[algorithm] = { time: 0, steps: [] }
+        stepHistory[algorithm] = { time: 0, steps: [], directions: [] }
         let newGrid = cloneGrid(grid)
 
         // RUN IT!
@@ -249,10 +274,17 @@ function runAlgorithms() {
 
         const endTime = performance.now()
 
-        // Save execuation time and path
+        // Caculate cell directions
+        const directions = [];
+        for (let i = 0; i < path.length - 1; i++) {
+            directions.push(findDirection(path[i], path[i + 1]));
+        }
+
+        // Save execuation time, path and directions
         // Unit: ms - miliseconds
         stepHistory[algorithm].time = endTime - startTime
         stepHistory[algorithm].steps = path
+        stepHistory[algorithm].directions = directions;
     }
 }
 

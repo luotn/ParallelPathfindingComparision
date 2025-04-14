@@ -6,8 +6,8 @@ Features:
  - [ ] Share Link
 
 Todo list
- - [ ] Fix progress bar animation
- - [ ] Optimise performance
+ - [x] Fix progress bar animation
+ - [x] Optimise performance
  - [ ] Group algorithm statistics
  - [ ] Add documentation
  - [ ] Get suggestions
