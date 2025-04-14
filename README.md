@@ -8,6 +8,6 @@ Features:
 Todo list
  - [x] Fix progress bar animation
  - [x] Optimise performance
- - [ ] Group algorithm statistics
+ - [x] Group algorithm statistics
  - [ ] Add documentation
  - [ ] Get suggestions
