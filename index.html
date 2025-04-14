@@ -12,7 +12,7 @@
     <script src="js/grid.js"></script>
 </head>
 
-<body>
+<body onload="init()">
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="./index.html">Algorithm Finder</a>
@@ -83,20 +83,20 @@
                         </a>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="aStar" onchange="changeAlgorithm('AStar')">
-                        <label class="form-check-label" for="aStar">A* Search</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" id="AStar" onchange="changeAlgorithm('AStar')">
+                        <label class="form-check-label" for="AStar">A* Search</label>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="dijkstra" onchange="changeAlgorithm('Dijkstra')">
-                        <label class="form-check-label" for="dijkstra">Dijkstra's Algorithm</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" id="Dijkstra" onchange="changeAlgorithm('Dijkstra')">
+                        <label class="form-check-label" for="Dijkstra">Dijkstra's Algorithm</label>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="bfs" onchange="changeAlgorithm('BFS')">
-                        <label class="form-check-label" for="bfs">Breadth-first Search (BFS)</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" id="BFS" onchange="changeAlgorithm('BFS')">
+                        <label class="form-check-label" for="BFS">Breadth-first Search (BFS)</label>
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="dfs" onchange="changeAlgorithm('DFS')">
-                        <label class="form-check-label" for="dfs">Depth-first Search (DFS)</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" id="DFS" onchange="changeAlgorithm('DFS')">
+                        <label class="form-check-label" for="DFS">Depth-first Search (DFS)</label>
                     </li>
                     <li class="list-group-item"><button class="btn btn-primary" id="simulate" onclick="simulate()"
                             disabled>Simulate!</button></li>

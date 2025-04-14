@@ -6,6 +6,10 @@
     vertical-align: middle;
 }
 
+img.controlIcon.disabled {
+    background-color: gray !important;
+}
+
 #gridPrview .visited {
     background-image: url("./icons/square-fill.svg");
     background-repeat: no-repeat;

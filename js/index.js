@@ -9,6 +9,60 @@ let gridOK = false
 
 let algorithms = []
 
+function init() {
+    let gridString = sessionStorage.getItem("grid")
+    let algorithmString = sessionStorage.getItem("algorithms")
+    let benchmark = sessionStorage.getItem("benchmark")
+    if(gridString != undefined && algorithmString != undefined && benchmark != null) {
+        console.log("Reloading grid...")
+        // Reconstruct grid object
+        plainObj = JSON.parse(gridString)
+        height = plainObj.height
+        width = plainObj.width
+
+        // Reconstuct algorithms
+        algorithms = JSON.parse(algorithmString)
+
+        // Put grid setting back
+        document.getElementById("width").value = width
+        document.getElementById("height").value = height
+        document.getElementById("benchmark").checked = benchmark
+
+        // Put grid data back
+        let result = `<table class="board">\n<tbody>\n`
+        for (let y = 0; y < height; y++) {
+            result += `<tr id="row ${y}">\n`
+            for (let x = 0; x < width; x++) {
+                let cellData = plainObj.data[y * width + x]
+                result += `<td id="${x}-${y}" role="cell" class="${cellData}"></td>\n`
+
+                switch (cellData) {
+                    case "start":
+                        start = [x, y]
+                        break
+                    case "target":
+                        target = [x, y]
+                        break
+                    case "wall":
+                        walls.push([x, y])
+                        break
+                }
+            }
+            result += `</tr>\n`
+        }
+        result += `</tbody>\n</table>\n`
+        document.getElementById("gridPrview").innerHTML = result
+
+        // Put algorithms settings back
+        for(let algorithm of algorithms) {
+            document.getElementById(algorithm).checked = true
+        }
+        addEventListeners()
+        gridOK = true
+        updateButtons()
+    }
+}
+
 function createGrid() {
     width = parseInt(document.getElementById("width").value)
     height = parseInt(document.getElementById("height").value)
@@ -45,6 +99,10 @@ function createGrid() {
     gridOK = true
     updateButtons()
 
+    addEventListeners()
+}
+
+function addEventListeners() {
     // Add eventlisteners
     document.querySelectorAll('[role="cell"]').forEach(function(cell) {
         cell.addEventListener("mousedown", function(event) {

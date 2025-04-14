@@ -11,12 +11,14 @@ let currentStep = 0
 let playBackID
 let cellReferences
 let lastRenderedStep = 0
+let validResult = true
+const controlIcons = ["stepBackIcon", "stepForwardIcon", "rewindIcon", "playBackIcon", "forwardIcon"]
 
 // luotn's github pages host
-let domain = "https://luotn.github.io/ParallelPathfindingComparision"
+// let domain = "https://luotn.github.io/ParallelPathfindingComparision"
 
 // host locally
-// let domain = "http://127.0.0.1:5500"
+let domain = "http://127.0.0.1:5500"
 
 function init() {
     let urlQuery = window.location.search.substring(1)
@@ -73,50 +75,84 @@ function init() {
                         Benchmark Result<br>
                     </li>`
         for (let algorithm of algorithms) {
-            result += `
-                    <li class="list-group-item">
-                        ${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${benchmarkResult[algorithm].avgTime}μs
-                    </li>
-            `
+            result += `<li class="list-group-item">`
+            if(benchmarkResult[algorithm].avgTime != -1) {
+                result += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${benchmarkResult[algorithm].avgTime}μs`
+            } else {
+                result += `${algorithm}: Did not find a path`
+            }
+            result += `</li>`
         }
         document.getElementById("benchmarks").innerHTML = result
     }
 
     constructVisuals()
     updateProgressBar()
+    preLoadImages()
     addEventListeners()
+}
+
+function preLoadImages() {
+    var image = new Image();
+    image.src = "./icons/arrow-down-square-fill.svg"
+    image.src = "./icons/arrow-up-square-fill.svg"
+    image.src = "./icons/arrow-left-square-fill.svg"
+    image.src = "./icons/door-open-fill.svg"
 }
 
 // Add window event listener
 function addEventListeners() {
-    window.addEventListener("keydown", function (event) {
-        switch (event.key) {
-            case "a":
-                handleStepBack()
-                break
-            case "d":
-                handleStepForward()
-                break
-            case "s":
-                handleRewind()
-                break
-            case "w":
-                handleForward()
-                break
-            case "q":
-                if (playBackID === null) {
-                    startPlayback()
-                } else {
-                    stopPlayback()
-                }
-                break
-            case "r":
-                this.sessionStorage.clear()
-                window.location.replace("./index.html")
-                break
-        }
+    if (validResult) {
+        window.addEventListener("keydown", function (event) {
+            switch (event.key) {
+                case "a":
+                    handleStepBack()
+                    break
+                case "d":
+                    handleStepForward()
+                    break
+                case "s":
+                    handleRewind()
+                    break
+                case "w":
+                    handleForward()
+                    break
+                case "q":
+                    if (playBackID === null) {
+                        startPlayback()
+                    } else {
+                        stopPlayback()
+                    }
+                    break
+                case "r":
+                    hardReset()
+                    break
+            }
 
-    })
+        })
+    } else {
+        console.log("Locking controls")
+        disableControls()
+        window.addEventListener("keydown", function (event) {
+            if(event.key == "r") {
+                hardReset()
+            }
+        })
+    }
+}
+
+function hardReset() {
+    this.sessionStorage.clear()
+    window.location.replace("./index.html")
+}
+
+function disableControls() {
+    document.getElementById("speed").disabled = true
+    for(let icon of controlIcons) {
+        let control = document.getElementById(icon)
+        control.classList += " disabled"
+        control.removeAttribute("onclick")
+    }
 }
 
 function startPlayback() {
@@ -233,7 +269,12 @@ function constructVisuals() {
     // Add visual for each algorithm
     for (const algorithm of algorithms) {
         // Statistics
-        visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${Math.round(stepHistory[algorithm].time)}ms.`
+        if(validResult) {
+            visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${Math.round(stepHistory[algorithm].time)}ms.`
+        } else {
+            visualResult += `${algorithm}: Did NOT find path in ${Math.round(stepHistory[algorithm].time)}ms.`
+            document.getElementById("controlPrompt").innerHTML = "Controls Disabled!"
+        }
 
         // Draw initial grid
         visualResult += `<table class="board ${algorithm}">\n<tbody>\n`
@@ -270,24 +311,29 @@ function saveReferences() {
 function runBenchmark() {
     // Run benchmark and save times to benchmarkResult
     for (let algorithm of algorithms) {
-        let totalTime = 0
+        if(stepHistory[algorithm].steps.length != 0) {
+            let totalTime = 0
 
-        // Warmup
-        for (let i = 0; i < warmups; i++) {
-            let newGrid = cloneGrid(grid)
-            runAlgorithm(algorithm, newGrid)
-        }
+            // Warmup
+            for (let i = 0; i < warmups; i++) {
+                let newGrid = cloneGrid(grid)
+                runAlgorithm(algorithm, newGrid)
+            }
 
-        // Run benchmark
-        for (let j = 0; j < benchmarkTimes; j++) {
-            let newGrid = cloneGrid(grid)
-            const startTime = performance.now()
-            runAlgorithm(algorithm, newGrid)
-            const endTime = performance.now()
-            totalTime += endTime - startTime
+            // Run benchmark
+            for (let j = 0; j < benchmarkTimes; j++) {
+                let newGrid = cloneGrid(grid)
+                const startTime = performance.now()
+                runAlgorithm(algorithm, newGrid)
+                const endTime = performance.now()
+                totalTime += endTime - startTime
+            }
+
+            // Unit: μs
+            benchmarkResult[algorithm] = {avgTime: Math.round(1.0 * (totalTime / benchmarkTimes) * 1e3)}
+        } else {
+            benchmarkResult[algorithm] = {avgTime: -1}
         }
-        // Unit: μs
-        benchmarkResult[algorithm] = { avgTime: Math.round(1.0 * (totalTime / benchmarkTimes) * 1e3) }
     }
 }
 
@@ -316,6 +362,9 @@ function runAlgorithms() {
         stepHistory[algorithm].time = endTime - startTime
         stepHistory[algorithm].steps = path
         stepHistory[algorithm].directions = directions;
+        if(validResult) {
+            validResult = stepHistory[algorithm].steps.length != 0
+        }
     }
 }
 

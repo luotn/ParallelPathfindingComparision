@@ -33,7 +33,8 @@
                 </div>
             </div>
             <div class="d-flex" id="share" onclick="share()">
-                <img src="./icons/box-arrow-up.svg" alt="Start" width="23" height="23" class="svgs" style="align-self: last baseline;">&nbsp;&nbsp;Share
+                <img src="./icons/box-arrow-up.svg" alt="Start" width="23" height="23" class="svgs"
+                    style="align-self: last baseline;">&nbsp;&nbsp;Share
             </div>
         </div>
     </nav>
@@ -59,38 +60,42 @@
                 <ul class="list-group" id="controls">
                     <li class="list-group-item" id="controlPanel">
                         Control Panel<br>
-                        <a class="settingsPrompt">
+                        <a class="settingsPrompt" id="controlPrompt">
                             Keyboard control avaliable.
                         </a>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item" id="progressBar">
                         <a id="progressBarText">Step 0/0</a>
-                        <div class="progress" role="progressbar" aria-label="Step Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0" id="stepProgressBG">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" id="stepProgress"></div>
+                        <div class="progress" role="progressbar" aria-label="Step Progress" aria-valuenow="0"
+                            aria-valuemin="0" aria-valuemax="0" id="stepProgressBG">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"
+                                id="stepProgress"></div>
                         </div>
                     </li>
-                    <li class="list-group-item" id="widthGroup">
+                    <li class="list-group-item" id="stepControl">
                         <img src="./icons/chevron-bar-left.svg" alt="stepBack" width="25" height="25"
-                            class="controlIcon" onclick="handleStepBack()">
+                            class="controlIcon" onclick="handleStepBack()" id="stepBackIcon">
                         &nbsp;&nbsp;&nbsp;&nbsp;
                         <img src="./icons/chevron-bar-right.svg" alt="stepForward" width="25" height="25"
-                            class="controlIcon" onclick="handleStepForward()"><br>
+                            class="controlIcon" onclick="handleStepForward()" id="stepForwardIcon"><br>
                         <a class="settingsPrompt">
                             Step Back(A) &nbsp;&nbsp; Step Forward(D)<br>
                         </a>
                     </li>
-                    <li class="list-group-item" id="heightGroup">
-                        <img src="./icons/rewind-fill.svg" alt="Rewind" width="25" height="25" class="controlIcon" onclick="handleRewind()">
+                    <li class="list-group-item" id="windControl">
+                        <img src="./icons/rewind-fill.svg" alt="Rewind" width="25" height="25" class="controlIcon"
+                            onclick="handleRewind()" id="rewindIcon">
                         &nbsp;&nbsp;
-                        <img src="./icons/play-fill.svg" alt="run" width="25" height="25" class="controlIcon" onclick="startPlayback()" id="playBackIcon">
+                        <img src="./icons/play-fill.svg" alt="run" width="25" height="25" class="controlIcon"
+                            onclick="startPlayback()" id="playBackIcon">
                         &nbsp;&nbsp;
                         <img src="./icons/fast-forward-fill.svg" alt="fastFoward" width="25" height="25"
-                            class="controlIcon" onclick="handleForward()"><br>
+                            class="controlIcon" onclick="handleForward()" id="forwardIcon"><br>
                         <a class="settingsPrompt" id="playBackText">
                             Rewind(S) &nbsp;&nbsp; Start(Q) &nbsp;&nbsp; Foward(W)
                         </a>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item" id="speedControl">
                         <label for="customRange1" class="form-label"><img src="./icons/speedometer2.svg" alt="stepBack"
                                 width="18" height="18">&nbsp;&nbsp;Simulation speed</label>
                         <input type="range" class="form-range" min="0" max="1" step="0.01" id="speed"
@@ -101,7 +106,7 @@
                     </li>
                     <li class="list-group-item">
                         <img src="./icons/bootstrap-reboot.svg" alt="Rewind" width="25" height="25"
-                            class="controlIcon"><br>
+                            class="controlIcon" onclick="hardReset()"><br>
                         <a class="settingsPrompt">
                             Hard Reset(R)<br>
                             <a style="color: firebrick;">
