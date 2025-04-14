@@ -42,7 +42,7 @@ function init() {
         for (let algorithm of algorithms) {
             result += `
                     <li class="list-group-item">
-                        ${algorithm} ${benchmarkResult[algorithm].avgTime}μs
+                        ${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${benchmarkResult[algorithm].avgTime}μs
                     </li>
             `
         }
@@ -50,6 +50,7 @@ function init() {
     }
 
     constructVisuals()
+    updateProgressBar()
     addEventListeners()
 }
 
@@ -184,7 +185,7 @@ function findDirection(currentCell, nextCell) {
 function updateProgressBar() {
     document.getElementById("stepProgressBG").setAttribute("aria-valuenow", `${currentStep}`)
     document.getElementById("stepProgress").setAttribute("style", `width: ${currentStep / maxStep * 100}%`)
-    document.getElementById("stepProgress").innerHTML = `Step ${currentStep}/${maxStep}`
+    document.getElementById("progressBarText").innerHTML = `Step ${currentStep}/${maxStep}`
 }
 
 // Visualise result
@@ -194,10 +195,7 @@ function constructVisuals() {
         const algorithmStep = stepHistory[algorithm].steps.length - 1
         maxStep = algorithmStep > maxStep ? algorithmStep : maxStep
     }
-    let visualResult = `
-                <div class="progress" role="progressbar" aria-label="Step Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="${maxStep}" id="stepProgressBG">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" id="stepProgress">Step 0/${maxStep}</div>
-                </div>\n`
+    let visualResult = ""
 
     // Add visual for each algorithm
     for (const algorithm of algorithms) {

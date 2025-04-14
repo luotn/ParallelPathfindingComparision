@@ -1,14 +1,9 @@
 .controlIcon {
     border-radius: 7px;
     border: 1px solid gray;
-    background-color: deepskyblue;
+    background-color: #1ABFED;
     padding: 2px;
     vertical-align: middle;
-}
-
-#stepProgressBG {
-    --bs-progress-bg: gray;
-    margin-right: 15px;
 }
 
 #gridPrview .visited {
