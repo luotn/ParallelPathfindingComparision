@@ -2,7 +2,7 @@ let speed = 0.5
 let grid = new GRID()
 let algorithms = []
 let stepHistory = {}
-let benchmark = null
+let benchmark
 let benchmarkResult = {}
 const warmups = 3
 const benchmarkTimes = 1000
@@ -13,12 +13,24 @@ let cellReferences
 let lastRenderedStep = 0
 let validResult = true
 const controlIcons = ["stepBackIcon", "stepForwardIcon", "rewindIcon", "playBackIcon", "forwardIcon"]
+const compressMap = {
+    'start': 's',
+    'target': 't',
+    'wall': 'w',
+    'unvisited': 'u'
+}
+const decompressMap = {
+    's': 'start',
+    't': 'target',
+    'w': 'wall',
+    'u': 'unvisited'
+}
 
 // luotn's github pages host
-// let domain = "https://luotn.github.io/ParallelPathfindingComparision"
+let domain = "https://luotn.github.io/ParallelPathfindingComparision"
 
 // host locally
-let domain = "http://127.0.0.1:5500"
+// let domain = "http://127.0.0.1:5500"
 
 function init() {
     let urlQuery = window.location.search.substring(1)
@@ -30,15 +42,15 @@ function init() {
         for (var i = 0; i < queries.length; i++) {
             var keyValuePair = queries[i].split('=')
             switch (keyValuePair[0]) {
-                case "grid":
-                    gridString = decodeURI(keyValuePair[1])
+                case "g":
+                    gridString = JSON.stringify(decompressGrid(decodeURI(keyValuePair[1])))
                     sessionStorage.setItem("grid", gridString)
                     break
-                case "algorithms":
+                case "a":
                     algorithmString = decodeURI(keyValuePair[1])
                     sessionStorage.setItem("algorithms", algorithmString)
                     break
-                case "benchmark":
+                case "b":
                     benchmark = decodeURI(keyValuePair[1])
                     sessionStorage.setItem("benchmark", benchmark)
                     break
@@ -52,7 +64,7 @@ function init() {
     }
 
     // Redirect to index if missing setting(s)
-    if (gridString == undefined || algorithmString == undefined || benchmark == null) {
+    if (gridString == undefined || algorithmString == undefined || benchmark == undefined) {
         alert("Simulation data not missing!\nRedirecting to index page...")
         window.location.replace("./index.html")
     }
@@ -68,7 +80,7 @@ function init() {
 
     runAlgorithms()
 
-    if (benchmark) {
+    if (benchmark == true) {
         runBenchmark()
         let result = `
                     <li class="list-group-item" id="benchmarkResult">
@@ -76,7 +88,7 @@ function init() {
                     </li>`
         for (let algorithm of algorithms) {
             result += `<li class="list-group-item">`
-            if(benchmarkResult[algorithm].avgTime != -1) {
+            if (benchmarkResult[algorithm].avgTime != -1) {
                 result += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${benchmarkResult[algorithm].avgTime}μs`
             } else {
                 result += `${algorithm}: Did not find a path`
@@ -102,7 +114,7 @@ function preLoadImages() {
 
 // Add window event listener
 function addEventListeners() {
-    if (validResult) {
+    if (validResult == true) {
         window.addEventListener("keydown", function (event) {
             switch (event.key) {
                 case "a":
@@ -134,7 +146,7 @@ function addEventListeners() {
         console.log("Locking controls")
         disableControls()
         window.addEventListener("keydown", function (event) {
-            if(event.key == "r") {
+            if (event.key == "r") {
                 hardReset()
             }
         })
@@ -148,7 +160,7 @@ function hardReset() {
 
 function disableControls() {
     document.getElementById("speed").disabled = true
-    for(let icon of controlIcons) {
+    for (let icon of controlIcons) {
         let control = document.getElementById(icon)
         control.classList += " disabled"
         control.removeAttribute("onclick")
@@ -159,7 +171,7 @@ function startPlayback() {
     document.getElementById("playBackIcon").src = "./icons/pause-fill.svg"
     document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
     document.getElementById("playBackText").innerHTML = `Rewind(S) &nbsp;&nbsp; Pause(Q) &nbsp;&nbsp; Foward(W)`
-    if (!playBackID) {
+    if (playBackID == false) {
         playBackID = setInterval(handleStepForward, 1000 * speed)
     }
 }
@@ -221,7 +233,7 @@ function updateVisuals() {
 
         for (let step = startStep + 1; step <= endStep; step++) {
             const [x, y] = steps[step]
-            if (forwarding) {
+            if (forwarding == true) {
                 cellReferences[algorithm][y * grid.width + x].className = directions[step]
             } else {
                 cellReferences[algorithm][y * grid.width + x].className = "unvisited"
@@ -269,7 +281,7 @@ function constructVisuals() {
     // Add visual for each algorithm
     for (const algorithm of algorithms) {
         // Statistics
-        if(validResult) {
+        if (validResult == true) {
             visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${Math.round(stepHistory[algorithm].time)}ms.`
         } else {
             visualResult += `${algorithm}: Did NOT find path in ${Math.round(stepHistory[algorithm].time)}ms.`
@@ -311,7 +323,7 @@ function saveReferences() {
 function runBenchmark() {
     // Run benchmark and save times to benchmarkResult
     for (let algorithm of algorithms) {
-        if(stepHistory[algorithm].steps.length != 0) {
+        if (stepHistory[algorithm].steps.length != 0) {
             let totalTime = 0
 
             // Warmup
@@ -330,9 +342,9 @@ function runBenchmark() {
             }
 
             // Unit: μs
-            benchmarkResult[algorithm] = {avgTime: Math.round(1.0 * (totalTime / benchmarkTimes) * 1e3)}
+            benchmarkResult[algorithm] = { avgTime: Math.round(1.0 * (totalTime / benchmarkTimes) * 1e3) }
         } else {
-            benchmarkResult[algorithm] = {avgTime: -1}
+            benchmarkResult[algorithm] = { avgTime: -1 }
         }
     }
 }
@@ -362,7 +374,7 @@ function runAlgorithms() {
         stepHistory[algorithm].time = endTime - startTime
         stepHistory[algorithm].steps = path
         stepHistory[algorithm].directions = directions;
-        if(validResult) {
+        if (validResult == true) {
             validResult = stepHistory[algorithm].steps.length != 0
         }
     }
@@ -407,19 +419,36 @@ function updateSpeed() {
 }
 
 function share() {
-    let resultURL = `${domain}/simulate.html?grid=${sessionStorage.getItem("grid")}&algorithms=${sessionStorage.getItem("algorithms")}&benchmark=${sessionStorage.getItem("benchmark")}`
+    let resultURL = `${domain}/simulate.html?g=${compressGrid()}&a=${sessionStorage.getItem("algorithms")}&b=${sessionStorage.getItem("benchmark")}`
     navigator.clipboard.writeText(resultURL)
     document.getElementById("share").innerHTML = `<img src="./icons/clipboard-check.svg" alt="Start" width="23" height="23" class="svgs" style="align-self: last baseline;">&nbsp;&nbsp;Copied!`
-    console.log(compressGrid())
 }
 
 function compressGrid() {
-    const stateMap = {
-        'start': 's',
-        'target': 't',
-        'wall': 'w',
-        'unvisited': 'u'
-    };
-    const compressed = grid.data.map(cell => stateMap[cell]).join('');
-    return `${grid.width}_${grid.height}_${compressed}`;
+    let compressed = grid.data.map(cell => compressMap[cell]).join('')
+    return `${grid.width}_${grid.height}_${compressed}`
+}
+
+function decompressGrid(compressedStr) {
+    const [widthStr, heightStr, dataStr] = compressedStr.split('_')
+    let width = parseInt(widthStr)
+    let height = parseInt(heightStr)
+
+    if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+        throw new Error('Invalid grid dimensions')
+    }
+
+    let expectedLength = width * height;
+    if (dataStr.length !== expectedLength) {
+        throw new Error('Data length does not match grid size')
+    }
+
+    let data = [];
+    for (let char of dataStr) {
+        let state = decompressMap[char];
+        if (!state) throw new Error(`Invalid character: ${char}`)
+        data.push(state)
+    }
+
+    return {"width": width, "height": height, "data": data}
 }
