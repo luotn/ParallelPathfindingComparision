@@ -12,7 +12,7 @@ let algorithms = []
 function init() {
     let gridString = sessionStorage.getItem("grid")
     let algorithmString = sessionStorage.getItem("algorithms")
-    let benchmark = sessionStorage.getItem("benchmark")
+    let benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
     if(gridString != undefined && algorithmString != undefined && benchmark != null) {
         console.log("Reloading grid...")
         // Reconstruct grid object

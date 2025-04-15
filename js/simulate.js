@@ -60,7 +60,7 @@ function init() {
     } else {
         gridString = sessionStorage.getItem("grid")
         algorithmString = sessionStorage.getItem("algorithms")
-        benchmark = sessionStorage.getItem("benchmark")
+        benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
     }
 
     // Redirect to index if missing setting(s)
@@ -80,7 +80,7 @@ function init() {
 
     runAlgorithms()
 
-    if (benchmark == true) {
+    if (benchmark) {
         runBenchmark()
         let result = `
                     <li class="list-group-item" id="benchmarkResult">
@@ -114,7 +114,7 @@ function preLoadImages() {
 
 // Add window event listener
 function addEventListeners() {
-    if (validResult == true) {
+    if (validResult) {
         window.addEventListener("keydown", function (event) {
             switch (event.key) {
                 case "a":
@@ -171,7 +171,7 @@ function startPlayback() {
     document.getElementById("playBackIcon").src = "./icons/pause-fill.svg"
     document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
     document.getElementById("playBackText").innerHTML = `Rewind(S) &nbsp;&nbsp; Pause(Q) &nbsp;&nbsp; Foward(W)`
-    if (playBackID == false) {
+    if (!playBackID) {
         playBackID = setInterval(handleStepForward, 1000 * speed)
     }
 }
@@ -233,7 +233,7 @@ function updateVisuals() {
 
         for (let step = startStep + 1; step <= endStep; step++) {
             const [x, y] = steps[step]
-            if (forwarding == true) {
+            if (forwarding) {
                 cellReferences[algorithm][y * grid.width + x].className = directions[step]
             } else {
                 cellReferences[algorithm][y * grid.width + x].className = "unvisited"
@@ -281,7 +281,7 @@ function constructVisuals() {
     // Add visual for each algorithm
     for (const algorithm of algorithms) {
         // Statistics
-        if (validResult == true) {
+        if (validResult) {
             visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${Math.round(stepHistory[algorithm].time)}ms.`
         } else {
             visualResult += `${algorithm}: Did NOT find path in ${Math.round(stepHistory[algorithm].time)}ms.`
@@ -374,7 +374,7 @@ function runAlgorithms() {
         stepHistory[algorithm].time = endTime - startTime
         stepHistory[algorithm].steps = path
         stepHistory[algorithm].directions = directions;
-        if (validResult == true) {
+        if (validResult) {
             validResult = stepHistory[algorithm].steps.length != 0
         }
     }
