@@ -18,7 +18,7 @@ Todo list
  - [x] Add draw wall instructions
  - [x] Add delete all walls
  - [x] Add back to index in simulate.html - added edit grid
- - [ ] Find optimal default step interval
+ - [x] Find optimal default step interval
  - [x] Fix scrollbar for large grid - now only require one scroll bar
  - [ ] Show position of curser in grid
 
