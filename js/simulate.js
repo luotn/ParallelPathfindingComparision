@@ -410,4 +410,16 @@ function share() {
     let resultURL = `${domain}/simulate.html?grid=${sessionStorage.getItem("grid")}&algorithms=${sessionStorage.getItem("algorithms")}&benchmark=${sessionStorage.getItem("benchmark")}`
     navigator.clipboard.writeText(resultURL)
     document.getElementById("share").innerHTML = `<img src="./icons/clipboard-check.svg" alt="Start" width="23" height="23" class="svgs" style="align-self: last baseline;">&nbsp;&nbsp;Copied!`
+    console.log(compressGrid())
+}
+
+function compressGrid() {
+    const stateMap = {
+        'start': 's',
+        'target': 't',
+        'wall': 'w',
+        'unvisited': 'u'
+    };
+    const compressed = grid.data.map(cell => stateMap[cell]).join('');
+    return `${grid.width}_${grid.height}_${compressed}`;
 }

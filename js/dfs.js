@@ -8,6 +8,7 @@ class DFS {
         this.directions = ["up", "down", "left", "right"]
     }
 
+    //  Order: right → left → down → up
     run() {
         const start = this.grid.start
         const target = this.grid.target

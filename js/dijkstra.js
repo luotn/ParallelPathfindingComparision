@@ -14,9 +14,9 @@ class Dijkstra {
         const target = this.grid.target
 
         // 初始化起点距离
-        this.distances[`${start[0]},${start[1]}`] = 0
+        this.distances[`${start[0]}, ${start[1]}`] = 0
         this.priorityQueue.push({ pos: start, distance: 0 })
-        this.parent[`${start[0]},${start[1]}`] = null
+        this.parent[`${start[0]}, ${start[1]}`] = null
 
         while (this.priorityQueue.length > 0) {
             // 按距离排序，取最小值
@@ -32,13 +32,13 @@ class Dijkstra {
             for (const dir of this.directions) {
                 const [cellState, nextPos] = this.grid.getCellAt([currentX, currentY], dir)
                 const [nextX, nextY] = nextPos
-                const nextKey = `${nextX},${nextY}`
+                const nextKey = `${nextX}, ${nextY}`
 
                 // 跳过墙和非法方向
                 if (cellState === "wall") continue
 
                 // 计算新路径的距离（当前距离 + 1）
-                const tentativeDistance = this.distances[`${currentX},${currentY}`] + 1
+                const tentativeDistance = this.distances[`${currentX}, ${currentY}`] + 1
 
                 // 如果新路径更优，则更新
                 if (this.distances[nextKey] === undefined || tentativeDistance < this.distances[nextKey]) {
@@ -57,7 +57,7 @@ class Dijkstra {
         let node = end
         while (node !== null) {
             path.unshift(node)
-            const key = `${node[0]},${node[1]}`
+            const key = `${node[0]}, ${node[1]}`
             node = this.parent[key]
         }
         return path

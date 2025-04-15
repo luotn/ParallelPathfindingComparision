@@ -14,11 +14,11 @@ class AStar {
         const target = this.grid.target
 
         // Init start point score
-        this.gScore[`${start[0]},${start[1]}`] = 0
+        this.gScore[`${start[0]}, ${start[1]}`] = 0
         const startFScore = this.grid.taxiCabDistanceToTarget(start)
         this.priorityQueue.push({ pos: start, fScore: startFScore })
 
-        this.parent[`${start[0]},${start[1]}`] = null
+        this.parent[`${start[0]}, ${start[1]}`] = null
 
         while (this.priorityQueue.length > 0) {
             // Sort by total score, use min
@@ -34,13 +34,13 @@ class AStar {
             for (const dir of this.directions) {
                 const [cellState, nextPos] = this.grid.getCellAt(current, dir)
                 const [nextX, nextY] = nextPos
-                const nextKey = `${nextX},${nextY}`
+                const nextKey = `${nextX}, ${nextY}`
 
                 // Skip walls
                 if (cellState === "wall") continue
 
                 // Calculate score of new cell (step + 1)
-                const tentativeGScore = this.gScore[`${currentX},${currentY}`] + 1
+                const tentativeGScore = this.gScore[`${currentX}, ${currentY}`] + 1
 
                 // Update if new route has lower score
                 if (this.gScore[nextKey] === undefined || tentativeGScore < this.gScore[nextKey]) {
@@ -48,9 +48,7 @@ class AStar {
                     this.gScore[nextKey] = tentativeGScore
                     const fScore = tentativeGScore + this.grid.taxiCabDistanceToTarget(nextPos)
 
-                    // Avoid duplications
-                    if (!this.priorityQueue.some(item => item.pos[0] === nextX && item.pos[1] === nextY))
-                        this.priorityQueue.push({ pos: nextPos, fScore })
+                    this.priorityQueue.push({ pos: nextPos, fScore })
                 }
             }
         }
@@ -63,7 +61,7 @@ class AStar {
         let node = end
         while (node !== null) {
             path.unshift(node)
-            const key = `${node[0]},${node[1]}`
+            const key = `${node[0]}, ${node[1]}`
             node = this.parent[key]
         }
         return path
