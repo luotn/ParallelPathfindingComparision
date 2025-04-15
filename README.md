@@ -23,6 +23,6 @@ Todo list
  - [ ] Show position of curser in grid
 
 
-[Fixed path](http://127.0.0.1:5500/simulate.html?g=14_20_swuuuwuuuwuuuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuuuwuuuwuuuwut&a=["AStar","Dijkstra","BFS","DFS"]&b=true)
+[Fixed path](https://luotn.github.io/ParallelPathfindingComparision/simulate.html?g=14_20_swuuuwuuuwuuuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuwuuuwuuuwuuuwut&a=["AStar","Dijkstra","BFS","DFS"]&b=true)
 
-[A* different from BFS Grid](http://127.0.0.1:5500/simulate.html?g=13_13_uuuuuuuuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuusuuwuuuutuuuuuuuwwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuuuuuuuu&a=["AStar","Dijkstra","BFS","DFS"]&b=true)
+[A* different from BFS Grid](https://luotn.github.io/ParallelPathfindingComparision/simulate.html?g=13_13_uuuuuuuuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuusuuwuuuutuuuuuuuwwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuwuuuuuuuuuuuuuuuuuuu&a=["AStar","Dijkstra","BFS","DFS"]&b=true)
