@@ -37,6 +37,10 @@
     }
 }
 
+.svgs {
+    vertical-align: -10%;
+}
+
 a {
     text-decoration: none;
 }
@@ -63,7 +67,7 @@ a {
 }
 
 #gridPrview {
-    overflow: auto;
+    overflow: visible;
     text-align: left;
 }
 
@@ -80,7 +84,7 @@ a {
 }
 
 .list-group {
-    margin-bottom: 2vw;
+    margin-bottom: 15px;
 }
 
 #credit {
@@ -121,5 +125,6 @@ a {
 }
 
 .settingsPrompt {
-    color: gray;
+    color: black;
+    font-size: 80%;
 }

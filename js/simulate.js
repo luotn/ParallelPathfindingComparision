@@ -1,4 +1,4 @@
-let speed = 0.5
+let speed = 0.2
 let grid = new GRID()
 let algorithms = []
 let stepHistory = {}
@@ -139,6 +139,8 @@ function addEventListeners() {
                 case "r":
                     hardReset()
                     break
+                case "e":
+                    editGrid()
             }
 
         })
@@ -158,6 +160,10 @@ function hardReset() {
     window.location.replace("./index.html")
 }
 
+function editGrid() {
+    window.location.replace("./index.html")
+}
+
 function disableControls() {
     document.getElementById("speed").disabled = true
     for (let icon of controlIcons) {
@@ -170,7 +176,7 @@ function disableControls() {
 function startPlayback() {
     document.getElementById("playBackIcon").src = "./icons/pause-fill.svg"
     document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
-    document.getElementById("playBackText").innerHTML = `Rewind(S) &nbsp;&nbsp; Pause(Q) &nbsp;&nbsp; Foward(W)`
+    document.getElementById("playBackText").innerHTML = `Pause(Q)`
     if (!playBackID) {
         playBackID = setInterval(handleStepForward, 1000 * speed)
     }
@@ -181,7 +187,7 @@ function stopPlayback() {
     playBackID = null
     document.getElementById("playBackIcon").src = "./icons/play-fill.svg"
     document.getElementById("playBackIcon").setAttribute("onclick", "startPlayback()")
-    document.getElementById("playBackText").innerHTML = `Rewind(S) &nbsp;&nbsp; Start(Q) &nbsp;&nbsp; Foward(W)`
+    document.getElementById("playBackText").innerHTML = `Start(Q)`
 }
 
 function handleForward() {

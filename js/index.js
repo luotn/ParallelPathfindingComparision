@@ -63,6 +63,15 @@ function init() {
     }
 }
 
+function clearWalls() {
+    for(let i = 0; i < walls.length; i++) {
+        let cell = walls[i]
+        document.getElementById(`${cell[0]}-${cell[1]}`).className = "unvisited"
+    }
+    walls = []
+    updateButtons()
+}
+
 function createGrid() {
     width = parseInt(document.getElementById("width").value)
     height = parseInt(document.getElementById("height").value)
@@ -79,17 +88,14 @@ function createGrid() {
     result += `</tbody>\n</table>\n`
     document.getElementById("gridPrview").innerHTML = result
 
-    // Caculate default start and target position
-    let defaultY = parseInt(height / 2)
-    let defaultX = parseInt(width / 2)
     // For most grids
     if (width > 1) {
-        start = [defaultX - 1, defaultY]
-        target = [defaultX, defaultY]
+        start = [0, 0]
+        target = [1, 0]
         // Spcial case for 1 x n grid
     } else if (width == 1) {
-        start = [0, defaultY - 1]
-        target = [0, defaultY]
+        start = [0, 0]
+        target = [0, 1]
     }
 
     // Update cell for start and target
@@ -97,6 +103,7 @@ function createGrid() {
     document.getElementById(`${target[0]}-${target[1]}`).className = "target"
 
     gridOK = true
+    walls = []
     updateButtons()
 
     addEventListeners()
@@ -219,10 +226,15 @@ function changeAlgorithm(algorithm) {
 }
 
 function updateButtons() {
-    if (width != 0 && height != 0 && width * height > 1)
+    if (width != 0 && height != 0 && width * height > 1) {
         document.getElementById("createGrid").disabled = false
-    else
+    } else {
         document.getElementById("createGrid").disabled = true
+    }
+    if (gridOK && walls.length > 0)
+        document.getElementById("clearWalls").disabled = false
+    else
+        document.getElementById("clearWalls").disabled = true
 
     if(gridOK && algorithms.length > 0)
         document.getElementById("simulate").disabled = false

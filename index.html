@@ -34,22 +34,24 @@
         <div class="row align-items-start">
             <div class="col-12" id="legend">
                 <img src="./icons/emoji-sunglasses-fill.svg" alt="Start" width="18" height="18" class="svgs">
-                &nbsp;&nbsp;Start&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;Start&nbsp;&nbsp;&nbsp;&nbsp;
                 <img src="./icons/door-closed.svg" alt="Target" width="18" height="18" class="svgs">
-                &nbsp;&nbsp;Target&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;Target&nbsp;&nbsp;&nbsp;&nbsp;
                 <img src="./icons/mouse-left-button.svg" alt="MouseLeft" width="18" height="18" class="svgs">
-                &nbsp;+&nbsp;
+                +
                 <img src="./icons/arrows-move.svg" alt="Move" width="18" height="18" class="svgs">
-                &nbsp;&nbsp;Edit Cell&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;Edit Cell&nbsp;
+                (on <img src="./icons/square.svg" alt="Move" width="18" height="18" class="svgs"> to create 
+                <img src="./icons/x-square.svg" alt="Move" width="18" height="18" class="svgs">&nbsp;Wall)
             </div>
             <div class="col-2 sticky-top" id="settings">
                 <ul class="list-group" id="step1">
                     <li class="list-group-item" id="step1prompt">
                         1. Create Grid<br>
                         <a class="settingsPrompt">
-                            Width and height >= 1<br>
-                            Size of grid > 2<br>
-                            Start and Target must be present
+                            Width or height >= 1<br>
+                            The other dimension >= 2<br>
+                            Start and Target must in grid
                         </a>
                     </li>
                     <li class="list-group-item" id="widthGroup">
@@ -68,16 +70,26 @@
                 </ul>
                 <ul class="list-group" id="step2">
                     <li class="list-group-item" id="step2prompt">
-                        2. Additional Features
+                        2. Edit Grid
                     </li>
                     <li class="list-group-item">
-                        <input class="form-check-input me-1" type="checkbox" value="" id="benchmark">
-                        <label class="form-check-label" for="benchmark">Benchmark (x1000)</label>
+                        <button class="btn btn-primary" id="clearWalls" onclick="clearWalls()" disabled>
+                            Clear Walls
+                        </button>
                     </li>
                 </ul>
                 <ul class="list-group" id="step3">
                     <li class="list-group-item" id="step3prompt">
-                        3. Select Algorithm(s)<br>
+                        3. Additional Features
+                    </li>
+                    <li class="list-group-item">
+                        <input class="form-check-input me-1" type="checkbox" value="" id="benchmark">
+                        <label class="form-check-label" for="benchmark">Average Time (x1000)</label>
+                    </li>
+                </ul>
+                <ul class="list-group" id="step4">
+                    <li class="list-group-item" id="step4prompt">
+                        4. Select Algorithm(s)<br>
                         <a class="settingsPrompt">
                             Select at least 1 algorithm
                         </a>

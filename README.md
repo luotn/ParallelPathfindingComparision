@@ -12,14 +12,14 @@ Todo list
  - [x] Group algorithm statistics
  - [ ] Add documentation
  - [ ] Get suggestions
- - [ ] fix create grid wording
- - [ ] change benchmark wording
+ - [x] fix create grid wording
+ - [x] change benchmark wording
  - [x] whethere chose or not benchmark avaliable
- - [ ] Add draw wall instructions
- - [ ] Add delete all walls
- - [ ] Add back to index in simulate.html
+ - [x] Add draw wall instructions
+ - [x] Add delete all walls
+ - [x] Add back to index in simulate.html - added edit grid
  - [ ] Find optimal default step interval
- - [ ] Fix scrollbar for large grid
+ - [x] Fix scrollbar for large grid - now only require one scroll bar
  - [ ] Show position of curser in grid
 
 
