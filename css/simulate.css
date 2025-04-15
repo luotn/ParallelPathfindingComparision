@@ -49,3 +49,7 @@ img.controlIcon.disabled {
     background-position-x: center;
     background-position-y: center;
 }
+
+#share {
+    color: black;
+}
