@@ -12,7 +12,7 @@
         filter: invert();
     }
 
-    #gridPrview td{
+    #gridPreview td{
         filter: invert();
         color: black;
     }
@@ -66,7 +66,7 @@ a {
     height: 25px;
 }
 
-#gridPrview {
+#gridPreview {
     overflow: visible;
     text-align: left;
 }
@@ -92,7 +92,7 @@ a {
     margin-bottom: 2vw;
 }
 
-#gridPrview .start {
+#gridPreview .start {
     background-image: url("../icons/emoji-sunglasses-fill.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -100,7 +100,7 @@ a {
     background-position-y: center;
 }
 
-#gridPrview .target {
+#gridPreview .target {
     background-image: url("../icons/door-closed.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -108,7 +108,7 @@ a {
     background-position-y: center;
 }
 
-#gridPrview .targetReached {
+#gridPreview .targetReached {
     background-image: url("../icons/door-open-fill.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -116,7 +116,7 @@ a {
     background-position-y: center;
 }
 
-#gridPrview .wall {
+#gridPreview .wall {
     background-image: url("../icons/x-square.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -127,4 +127,12 @@ a {
 .settingsPrompt {
     color: black;
     font-size: 80%;
+}
+
+.toast-body {
+    color: black;
+}
+
+.toast {
+    width: auto;
 }

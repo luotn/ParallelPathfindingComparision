@@ -10,7 +10,7 @@ img.controlIcon.disabled {
     background-color: gray !important;
 }
 
-#gridPrview .visited {
+#gridPreview .visited {
     background-image: url("./icons/square-fill.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -18,7 +18,7 @@ img.controlIcon.disabled {
     background-position-y: center;
 }
 
-#gridPrview .pathUp {
+#gridPreview .pathUp {
     background-image: url("../icons/arrow-up-square-fill.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -26,7 +26,7 @@ img.controlIcon.disabled {
     background-position-y: center;
 }
 
-#gridPrview .pathDown {
+#gridPreview .pathDown {
     background-image: url("../icons/arrow-down-square-fill.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -34,7 +34,7 @@ img.controlIcon.disabled {
     background-position-y: center;
 }
 
-#gridPrview .pathLeft {
+#gridPreview .pathLeft {
     background-image: url("../icons/arrow-left-square-fill.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -42,7 +42,7 @@ img.controlIcon.disabled {
     background-position-y: center;
 }
 
-#gridPrview .pathRight {
+#gridPreview .pathRight {
     background-image: url("../icons/arrow-right-square-fill.svg");
     background-repeat: no-repeat;
     background-size: 20px 20px;

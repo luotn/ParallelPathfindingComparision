@@ -25,6 +25,8 @@ const decompressMap = {
     'w': 'wall',
     'u': 'unvisited'
 }
+let positionViewer
+let positionText
 
 // luotn's github pages host
 let domain = "https://luotn.github.io/ParallelPathfindingComparision"
@@ -101,6 +103,10 @@ function init() {
     constructVisuals()
     updateProgressBar()
     preLoadImages()
+
+    positionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
+    positionText = document.getElementById("positionText")
+
     addEventListeners()
 }
 
@@ -144,6 +150,24 @@ function addEventListeners() {
             }
 
         })
+
+        let gridPreview = document.getElementById("gridPreview")
+        gridPreview.addEventListener("mouseenter", function () {
+            positionViewer.show()
+        })
+        gridPreview.addEventListener("mouseleave", function () {
+            positionViewer.hide()
+        })
+
+        // Add listener for each algorithm
+        for (let algorithm of algorithms) {
+            let algorithmGrid = document.getElementsByClassName(algorithm)[0]
+            algorithmGrid.querySelectorAll('[role="cell"]').forEach(function (cell) {
+                cell.addEventListener("mouseenter", function () {
+                    updatePositionViewer(algorithm, cell)
+                })
+            })
+        }
     } else {
         console.log("Locking controls")
         disableControls()
@@ -153,6 +177,17 @@ function addEventListeners() {
             }
         })
     }
+}
+
+function updatePositionViewer(algorithm, cell) {
+    let cellPosition = getPosFromID(cell)
+    positionText.innerHTML = `${algorithm}: [${cellPosition[0]}, ${cellPosition[1]}]`
+}
+
+function getPosFromID(element) {
+    return element.getAttribute("id").split("-").map(function (pos) {
+        return parseInt(pos)
+    })
 }
 
 function hardReset() {
@@ -306,7 +341,7 @@ function constructVisuals() {
         visualResult += `</tbody>\n</table>\n`
     }
 
-    document.getElementById("gridPrview").innerHTML = visualResult
+    document.getElementById("gridPreview").innerHTML = visualResult
 
     saveReferences()
 }
@@ -456,5 +491,5 @@ function decompressGrid(compressedStr) {
         data.push(state)
     }
 
-    return {"width": width, "height": height, "data": data}
+    return { "width": width, "height": height, "data": data }
 }

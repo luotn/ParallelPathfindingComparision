@@ -6,14 +6,15 @@ let target = [0, 0]
 let holdingCell = null
 let lastCellLocation = []
 let gridOK = false
-
+let positionViewer
+let positionText
 let algorithms = []
 
 function init() {
     let gridString = sessionStorage.getItem("grid")
     let algorithmString = sessionStorage.getItem("algorithms")
     let benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
-    if(gridString != undefined && algorithmString != undefined && benchmark != null) {
+    if (gridString != undefined && algorithmString != undefined && benchmark != null) {
         console.log("Reloading grid...")
         // Reconstruct grid object
         plainObj = JSON.parse(gridString)
@@ -51,20 +52,23 @@ function init() {
             result += `</tr>\n`
         }
         result += `</tbody>\n</table>\n`
-        document.getElementById("gridPrview").innerHTML = result
+        document.getElementById("gridPreview").innerHTML = result
 
         // Put algorithms settings back
-        for(let algorithm of algorithms) {
+        for (let algorithm of algorithms) {
             document.getElementById(algorithm).checked = true
         }
         addEventListeners()
         gridOK = true
         updateButtons()
     }
+
+    positionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
+    positionText = document.getElementById("positionText")
 }
 
 function clearWalls() {
-    for(let i = 0; i < walls.length; i++) {
+    for (let i = 0; i < walls.length; i++) {
         let cell = walls[i]
         document.getElementById(`${cell[0]}-${cell[1]}`).className = "unvisited"
     }
@@ -86,7 +90,7 @@ function createGrid() {
         result += `</tr>\n`
     }
     result += `</tbody>\n</table>\n`
-    document.getElementById("gridPrview").innerHTML = result
+    document.getElementById("gridPreview").innerHTML = result
 
     // For most grids
     if (width > 1) {
@@ -111,10 +115,10 @@ function createGrid() {
 
 function addEventListeners() {
     // Add eventlisteners
-    document.querySelectorAll('[role="cell"]').forEach(function(cell) {
-        cell.addEventListener("mousedown", function(event) {
-            if(event.button == 0) {
-                switch(cell.getAttribute("class")) {
+    document.querySelectorAll('[role="cell"]').forEach(function (cell) {
+        cell.addEventListener("mousedown", function (event) {
+            if (event.button == 0) {
+                switch (cell.getAttribute("class")) {
                     case "start":
                         holdingCell = "start"
                         break
@@ -137,7 +141,8 @@ function addEventListeners() {
         // When mouse enter a empty cell while holding start/target/wall
         // Update grid to reflect new start/target/wall position
         // Hold save action until mouse up
-        cell.addEventListener("mouseenter", function() {
+        cell.addEventListener("mouseenter", function () {
+            updatePositionViewer(cell)
             cellClass = cell.getAttribute("class")
             if (holdingCell == "start" || holdingCell == "target") {
                 if (cellClass == "unvisited")
@@ -152,7 +157,7 @@ function addEventListeners() {
         // When mourse leaves a cell while holding start
         // Update grid to remove start/target in current cell
         // Hold save sction until mouse up
-        cell.addEventListener("mouseleave", function() {
+        cell.addEventListener("mouseleave", function () {
             cellClass = cell.getAttribute("class")
             if (cellClass == "start" && holdingCell == "start")
                 updateCell(cell, "unvisited")
@@ -161,8 +166,8 @@ function addEventListeners() {
         })
 
         // Save the current grid settings to global variable
-        cell.addEventListener("mouseup", function(event) {
-            if(event.button == 0) {
+        cell.addEventListener("mouseup", function (event) {
+            if (event.button == 0) {
                 holdingCell = null
                 try {
                     start = getPosFromID(document.getElementsByClassName("start")[0])
@@ -171,7 +176,7 @@ function addEventListeners() {
                     try {
                         wallElements = document.getElementsByClassName("wall")
                         walls = []
-                        for(let i = 0; i < wallElements.length; i++) {
+                        for (let i = 0; i < wallElements.length; i++) {
                             walls[i] = getPosFromID(wallElements[i])
                         }
                     } catch (error) {
@@ -187,10 +192,23 @@ function addEventListeners() {
             }
         })
     })
+
+    let gridPreview = document.getElementById("gridPreview")
+    gridPreview.addEventListener("mouseenter", function () {
+        positionViewer.show()
+    })
+    gridPreview.addEventListener("mouseleave", function () {
+        positionViewer.hide() 
+    })
+}
+
+function updatePositionViewer(cell) {
+    let cellPosition = getPosFromID(cell)
+    positionText.innerHTML = `[${cellPosition[0]}, ${cellPosition[1]}]`
 }
 
 function getPosFromID(element) {
-    return element.getAttribute("id").split("-").map(function(pos) {
+    return element.getAttribute("id").split("-").map(function (pos) {
         return parseInt(pos)
     })
 }
@@ -218,7 +236,7 @@ function checkElementIsInt(element) {
 
 function changeAlgorithm(algorithm) {
     let index = algorithms.indexOf(algorithm)
-    if(index == -1)
+    if (index == -1)
         algorithms.push(algorithm)
     else
         algorithms.splice(index, 1)
@@ -236,7 +254,7 @@ function updateButtons() {
     else
         document.getElementById("clearWalls").disabled = true
 
-    if(gridOK && algorithms.length > 0)
+    if (gridOK && algorithms.length > 0)
         document.getElementById("simulate").disabled = false
     else
         document.getElementById("simulate").disabled = true
@@ -254,7 +272,7 @@ function simulate() {
     sessionStorage.setItem("algorithms", JSON.stringify(algorithms))
 
     // Save benchmark settings to sessionStorage
-    if(document.getElementById("benchmark").checked)
+    if (document.getElementById("benchmark").checked)
         sessionStorage.setItem("benchmark", true)
     else
         sessionStorage.setItem("benchmark", false)
