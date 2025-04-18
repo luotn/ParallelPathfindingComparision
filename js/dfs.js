@@ -6,6 +6,8 @@ class DFS {
         this.stack = []
         this.parent = {}
         this.directions = ["up", "down", "left", "right"]
+        this.visitHistory = []
+        this.visited = new Set()
     }
 
     //  Order: right → left → down → up
@@ -16,6 +18,7 @@ class DFS {
         // Init stack and parent cell
         this.stack.push(start)
         this.parent[`${start[0]}, ${start[1]}`] = null
+        let step = 0
 
         while (this.stack.length > 0) {
             const current = this.stack.pop()
@@ -23,20 +26,37 @@ class DFS {
 
             // Arrived
             if (currentX === target[0] && currentY === target[1])
-                return this._constructPath(current)
+                return [this._constructPath(current), this.visitHistory]
+
+            const cellName = `${currentX}-${currentY}`
+            this.visitHistory[step] = {}
+            this.visitHistory[step][cellName] = []
 
             // Explore 4 directions
             for (const dir of this.directions) {
                 const [cellState, nextPos] = this.grid.getCellAt(current, dir)
-                const [nextX, nextY] = nextPos
+                const nextCellName = `${nextPos[0]}-${nextPos[1]}`
 
-                // Check if new cell is unvisited
-                if (cellState === "unvisited" || cellState === "target") {
+                if (cellState === "wall" || this.grid.isOutOfBounds(nextPos) || this.visited.has(nextCellName)) {
+                    continue
+                }
+
+                // Check if next cell is the target
+                if (cellState === "target") {
+                    this.visitHistory[step][cellName].push(nextPos)
+                    this.parent[`${nextPos[0]}, ${nextPos[1]}`] = [currentX, currentY]
+                    const path = this._constructPath(nextPos)
+                    return [path, this.visitHistory]
+                }
+
+                if (cellState === "unvisited") {
+                    this.visitHistory[step][cellName].push(nextPos)
                     this.grid.setCell(nextPos, "visited")
                     this.stack.push(nextPos)
-                    this.parent[`${nextX}, ${nextY}`] = [currentX, currentY]
+                    this.parent[`${nextPos[0]}, ${nextPos[1]}`] = [currentX, currentY]
                 }
             }
+            step++
         }
         return []
     }

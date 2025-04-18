@@ -8,6 +8,7 @@ class GRID {
         }
         this.start = []
         this.target = []
+        this.visitHistory = {}
     }
 
     getTargetPos() {
@@ -47,7 +48,7 @@ class GRID {
         let row = pos[1]
         let currentIndex = row * this.width + col
         let cellState = "wall"
-        let nextPos = [col, row]
+        let nextPos = [-1, -1]
         switch(direction) {
             case "up":
                 if(row - 1 >= 0) {
@@ -77,6 +78,10 @@ class GRID {
         return [cellState, nextPos]
     }
 
+    isOutOfBounds(pos) {
+        return pos[0] < 0 || pos[0] > this.width || pos[1] < 0 || pos[1] > this.height
+    }
+
     taxiCabDistanceToTarget(pos) {
         return Math.abs(pos[0] - this.target[0]) + Math.abs(pos[1] - this.target[1])
     }
@@ -85,6 +90,7 @@ class GRID {
         let result = "---Grid---\n" + 
             "key:\n" + 
             "- = unvisited\n" + 
+            "0 = visited\n" + 
             "s = start\n" +
             "t = target\n" + 
             "x = wall\n\n"
@@ -94,6 +100,9 @@ class GRID {
                 switch (this.data[this.width * y + x]) {
                     case "unvisited":
                         cell = "-"
+                        break
+                    case "visited":
+                        cell = "0"
                         break
                     case "start":
                         cell = "s"

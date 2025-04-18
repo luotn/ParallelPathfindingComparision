@@ -91,7 +91,7 @@ function init() {
         for (let algorithm of algorithms) {
             result += `<li class="list-group-item">`
             if (benchmarkResult[algorithm].avgTime != -1) {
-                result += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${benchmarkResult[algorithm].avgTime}μs`
+                result += `<a class="settingsPrompt">${algorithm}: ${stepHistory[algorithm].history.length} steps; length ${stepHistory[algorithm].steps.length - 1}; ${benchmarkResult[algorithm].avgTime}μs</a>`
             } else {
                 result += `${algorithm}: Did not find a path`
             }
@@ -258,35 +258,72 @@ function updateEverything() {
 
 // Update algorithm results
 function updateVisuals() {
-    for (let algorithm of algorithms) {
-        let algorithmSteps = stepHistory[algorithm].steps.length
-        // Get step to render, last step if current step exceeds algorithm total steps
-        let renderStep = currentStep < algorithmSteps - 1 ? currentStep : algorithmSteps - 1
-        const { steps, directions } = stepHistory[algorithm]
+    for (const algorithm of algorithms) {
+        const {history, steps, directions} = stepHistory[algorithm]
+        const algorithmSteps = history.length
+        
+        // Calculate render range
+        const startStep = lastRenderedStep
+        const endStep = currentStep
+        const isForward = endStep > startStep
 
-        // Calculate steps to render
-        const startStep = Math.min(lastRenderedStep, renderStep)
-        let endStep = Math.max(lastRenderedStep, renderStep)
-        const forwarding = renderStep - lastRenderedStep - 1 >= 0
-
-        // Cap endStep at algorithmSteps - 1
-        endStep = Math.min(endStep, algorithmSteps - 1)
-
-        for (let step = startStep + 1; step <= endStep; step++) {
-            const [x, y] = steps[step]
-            if (forwarding) {
-                cellReferences[algorithm][y * grid.width + x].className = directions[step]
-            } else {
-                cellReferences[algorithm][y * grid.width + x].className = "unvisited"
+        // Reverse
+        if (!isForward) {
+            for (let step = startStep; step >= endStep; step--) {
+                if (step >= algorithmSteps) continue
+                const cells = Object.values(history[step]).flat()
+                cells.forEach(([x, y]) => {
+                    const index = y * grid.width + x
+                    if (cellReferences[algorithm][index].className !== "start" && 
+                        cellReferences[algorithm][index].className !== "target") {
+                        cellReferences[algorithm][index].className = "unvisited"
+                    }
+                })
+            }
+        // Forward
+        } else {
+            for (let step = startStep; step < endStep; step++) {
+                if (step >= algorithmSteps) continue
+                const cells = Object.values(history[step]).flat()
+                cells.forEach(([x, y]) => {
+                    const index = y * grid.width + x
+                    if (cellReferences[algorithm][index].className !== "start" && 
+                        cellReferences[algorithm][index].className !== "target") {
+                        cellReferences[algorithm][index].className = "visited"
+                    }
+                })
             }
         }
 
-        // Update target cell
-        const [targetX, targetY] = grid.getTargetPos()
-        const targetCell = cellReferences[algorithm][targetY * grid.width + targetX]
-        targetCell.className = renderStep == algorithmSteps - 1 ? "targetReached" : "target"
+        // Draw and un-draw path
+        const isFinalStep = currentStep >= algorithmSteps - 1
+        const wasFinalStep = lastRenderedStep >= algorithmSteps - 1
+        
+        if (wasFinalStep && !isFinalStep) {
+            drawPath(algorithm, false)
+        }
+        
+        if (isFinalStep && steps.length > 0) {
+            drawPath(algorithm, true)
+        }
     }
+    
     lastRenderedStep = currentStep
+}
+
+function drawPath(algorithm, draw) {
+    const {steps, directions} = stepHistory[algorithm]
+    for (let pathStep = 1; pathStep < stepHistory[algorithm].steps.length; pathStep++) {
+        const [x, y] = steps[pathStep]
+        if (draw) {
+            cellReferences[algorithm][y * grid.width + x].className = directions[pathStep]
+        } else {
+            cellReferences[algorithm][y * grid.width + x].className = currentStep == 0 ? "unvisited" : "visited"
+        }
+    }
+    // Update target cell
+    const [targetX, targetY] = grid.getTargetPos()
+    cellReferences[algorithm][targetY * grid.width + targetX].className = draw ? "targetReached" : "target"
 }
 
 // Find which direction the path icon should face
@@ -314,7 +351,7 @@ function updateProgressBar() {
 function constructVisuals() {
     // Find largest steps
     for (const algorithm of algorithms) {
-        const algorithmStep = stepHistory[algorithm].steps.length - 1
+        const algorithmStep = stepHistory[algorithm].history.length - 1
         maxStep = algorithmStep > maxStep ? algorithmStep : maxStep
     }
     let visualResult = ""
@@ -323,7 +360,7 @@ function constructVisuals() {
     for (const algorithm of algorithms) {
         // Statistics
         if (validResult) {
-            visualResult += `${algorithm}: ${stepHistory[algorithm].steps.length - 1} steps in ${Math.round(stepHistory[algorithm].time)}ms.`
+            visualResult += `${algorithm}: ${stepHistory[algorithm].history.length - 1} steps found path with length ${stepHistory[algorithm].steps.length - 1} in ${Math.round(stepHistory[algorithm].time)}ms.`
         } else {
             visualResult += `${algorithm}: Did NOT find path in ${Math.round(stepHistory[algorithm].time)}ms.`
             document.getElementById("controlPrompt").innerHTML = "Controls Disabled!"
@@ -400,9 +437,12 @@ function runAlgorithms() {
         // RUN IT!
         const startTime = performance.now()
 
-        path = runAlgorithm(algorithm, newGrid)
+        let result = runAlgorithm(algorithm, newGrid)
 
         const endTime = performance.now()
+
+        let path = result[0]
+        let history = result[1]
 
         // Caculate cell directions
         const directions = [];
@@ -414,7 +454,8 @@ function runAlgorithms() {
         // Unit: ms - miliseconds
         stepHistory[algorithm].time = endTime - startTime
         stepHistory[algorithm].steps = path
-        stepHistory[algorithm].directions = directions;
+        stepHistory[algorithm].directions = directions
+        stepHistory[algorithm].history = history
         if (validResult) {
             validResult = stepHistory[algorithm].steps.length != 0
         }
@@ -437,7 +478,7 @@ function runAlgorithm(algorithm, newGrid) {
             simulator = new DFS(newGrid)
             break
     }
-    if (simulator != null)
+    if (simulator)
         return simulator.run()
 }
 
