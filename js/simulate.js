@@ -88,8 +88,14 @@ function init() {
     // Reconstuct algorithms from session storage
     algorithms = JSON.parse(algorithmString)
 
-    runAlgorithms()
-
+    try {
+        runAlgorithms()
+    } catch(err) {
+        alert(err + "\nRedirecting to index page...")
+        window.location.replace("./index.html")
+        return
+    }
+    
     if (benchmark) {
         runBenchmark()
         let result = `
@@ -358,7 +364,7 @@ function findDirection(currentCell, nextCell) {
     else if (currentCell[1] > nextCell[1])
         return "pathUp"
     else
-        alert("Error in path!!!")
+        throw new Error("Path direction incorrect!")
 }
 
 // Update progress bar
