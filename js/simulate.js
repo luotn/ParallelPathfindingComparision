@@ -40,25 +40,32 @@ function init() {
     let algorithmString
     // Load share link if found, otherwise load session storage
     if (urlQuery.length > 0) {
-        let queries = urlQuery.split("&")
-        for (var i = 0; i < queries.length; i++) {
-            var keyValuePair = queries[i].split('=')
-            switch (keyValuePair[0]) {
-                case "g":
-                    gridString = JSON.stringify(decompressGrid(decodeURI(keyValuePair[1])))
-                    sessionStorage.setItem("grid", gridString)
-                    break
-                case "a":
-                    algorithmString = decodeURI(keyValuePair[1])
-                    sessionStorage.setItem("algorithms", algorithmString)
-                    break
-                case "b":
-                    benchmark = decodeURI(keyValuePair[1])
-                    sessionStorage.setItem("benchmark", benchmark)
-                    break
+        try {
+            let queries = urlQuery.split("&")
+            for (var i = 0; i < queries.length; i++) {
+                var keyValuePair = queries[i].split('=')
+                switch (keyValuePair[0]) {
+                    case "g":
+                        gridString = JSON.stringify(decompressGrid(decodeURI(keyValuePair[1])))
+                        sessionStorage.setItem("grid", gridString)
+                        break
+                    case "a":
+                        algorithmString = decodeURI(keyValuePair[1])
+                        sessionStorage.setItem("algorithms", algorithmString)
+                        break
+                    case "b":
+                        benchmark = decodeURI(keyValuePair[1])
+                        sessionStorage.setItem("benchmark", benchmark)
+                        break
+                }
             }
+            history.replaceState(null, "Algorithm Finder - Simulate", "?")
+        } catch(err) {
+            alert("Grid data incorrect!\nResetting all data.\nRedirecting to index page...")
+            sessionStorage.clear()
+            window.location.replace("./index.html")
+            return
         }
-        history.replaceState(null, "Algorithm Finder - Simulate", "?");
     } else {
         gridString = sessionStorage.getItem("grid")
         algorithmString = sessionStorage.getItem("algorithms")
@@ -67,8 +74,9 @@ function init() {
 
     // Redirect to index if missing setting(s)
     if (gridString == undefined || algorithmString == undefined || benchmark == undefined) {
-        alert("Simulation data not missing!\nRedirecting to index page...")
+        alert("Simulation data missing!\nRedirecting to index page...")
         window.location.replace("./index.html")
+        return
     }
 
     // Reconstruct grid from session storage
@@ -542,7 +550,7 @@ function decompressGrid(compressedStr) {
         throw new Error('Data length does not match grid size')
     }
 
-    let data = [];
+    let data = []
     for (let char of dataStr) {
         let state = decompressMap[char];
         if (!state) throw new Error(`Invalid character: ${char}`)
