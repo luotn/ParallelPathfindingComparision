@@ -24,10 +24,6 @@ class DFS {
             const current = this.stack.pop()
             const [currentX, currentY] = current
 
-            // Arrived
-            if (currentX === target[0] && currentY === target[1])
-                return [this._constructPath(current), this.visitHistory]
-
             const cellName = `${currentX}-${currentY}`
             this.visitHistory[step] = {}
             this.visitHistory[step][cellName] = []

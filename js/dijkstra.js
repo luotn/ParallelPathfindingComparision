@@ -25,10 +25,6 @@ class Dijkstra {
             const current = this.priorityQueue.shift()
             const [currentX, currentY] = current.pos
 
-            if (currentX === target[0] && currentY === target[1]) {
-                return [this._constructPath([currentX, currentY]), this.visitHistory]
-            }
-
             const cellName = `${currentX}-${currentY}`
             this.visitHistory[step] = {}
             this.visitHistory[step][cellName] = []

@@ -23,11 +23,6 @@ class BFS {
             const current = this.queue.shift()
             const [currentX, currentY] = current
 
-            // Check if current is target
-            if (currentX === target[0] && currentY === target[1]) {
-                return [this._constructPath(current), this.visitHistory]
-            }
-
             const cellName = `${currentX}-${currentY}`
             this.visitHistory[step] = {}
             this.visitHistory[step][cellName] = []
