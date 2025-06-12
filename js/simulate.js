@@ -25,8 +25,6 @@ const DecompressMap = {
     'w': 'wall',
     'u': 'unvisited'
 }
-let PositionViewer
-let PositionText
 
 // luotn's github pages host
 let domain = "https://luotn.github.io/ParallelPathfindingComparision"
@@ -60,7 +58,7 @@ function init() {
                 }
             }
             history.replaceState(null, "Algorithm Finder - Simulate", "?")
-        } catch(err) {
+        } catch (err) {
             alert("Grid data incorrect!\nResetting all data.\nRedirecting to index page...")
             sessionStorage.clear()
             window.location.replace("./index.html")
@@ -90,12 +88,12 @@ function init() {
 
     try {
         runAlgorithms()
-    } catch(err) {
+    } catch (err) {
         alert(err + "\nRedirecting to index page...")
         window.location.replace("./index.html")
         return
     }
-    
+
     if (Benchmark) {
         runBenchmark()
         let result = `
@@ -165,65 +163,6 @@ function addEventListeners() {
 
         })
 
-        let gridPreview = document.getElementById("gridPreview")
-        gridPreview.addEventListener("mouseenter", function () {
-            PositionViewer.show()
-        })
-        gridPreview.addEventListener("mouseleave", function () {
-            PositionViewer.hide()
-        })
-
-        // Add listener for each algorithm
-        for (let algorithm of Algorithms) {
-            let algorithmGrid = document.getElementsByClassName(algorithm)[0]
-            algorithmGrid.querySelectorAll('[role="cell"]').forEach(function (cell) {
-                cell.addEventListener("mouseenter", function () {
-                    PositionText.innerHTML = getCellPosText(algorithm, cell)
-                })
-                cell.addEventListener("click", function () {
-                    document.getElementById("cellDataViewerTitle").innerHTML = `${getCellPosText(algorithm, cell)} Information`
-                    bodyText = ""
-                    switch(cell.className) {
-                        case "start":
-                            bodyText = `This is the starting cell of the grid.<br>The ${algorithm} algorithm will always take this cell as step 0.`
-                            break
-                        case "target":
-                        case "targetReached":
-                            bodyText = `The ${algorithm} algorithm is trying to reach this cell.`
-                            break
-                        case "wall":
-                            bodyText = "This is a wall in the grid.<br>Path cannot pass through this cell."
-                            break
-                        case "unvisited":
-                            bodyText = `This is currently an empty cell in the grid.<br>`
-                            break
-                        case "pathUp":
-                        case "pathDown":
-                        case "pathLeft":
-                        case "pathRight":
-                            bodyText = `This is a cell on the path ${algorithm} algorithm chose to take.<br>`
-                            break
-                        case "visited":
-                            bodyText = `The ${algorithm} algorithm have evaluated or is evaluating this cell.<br>`
-                    }
-
-                    if(["visited", "unvisited", "pathUp", "pathDown", "pathLeft", "pathRight"].indexOf(cell.className) != -1) {
-                        const cellPos = getPosFromID(cell)
-                        console.log(`pos: ${[cellPos[0], cellPos[1]]}`)
-                        for(let i = 0; i < StepHistory[algorithm].steps.length; i++) {
-                            let step = StepHistory[algorithm].steps[i]
-                            if(step[0] == cellPos[0] && step[1] == cellPos[1]) {
-                                bodyText += `The ${algorithm} algorithm paths through this cell on step ${i}.`
-                            }
-                        }
-                    }
-
-                    document.getElementById("cellDataViewerBody").innerHTML = bodyText
-                    const cellDataViewer = new bootstrap.Modal('#cellDataViewer', null)
-                    cellDataViewer.show()
-                })
-            })
-        }
     } else {
         console.log("Locking controls")
         disableControls()
@@ -233,17 +172,6 @@ function addEventListeners() {
             }
         })
     }
-}
-
-function getCellPosText(algorithm, cell) {
-    let cellPosition = getPosFromID(cell)
-    return `${algorithm}: [${cellPosition[0]}, ${cellPosition[1]}]`
-}
-
-function getPosFromID(element) {
-    return element.getAttribute("id").split("-").map(function (pos) {
-        return parseInt(pos)
-    })
 }
 
 function hardReset() {
@@ -315,9 +243,9 @@ function updateEverything() {
 // Update algorithm results
 function updateVisuals() {
     for (const algorithm of Algorithms) {
-        const {history, steps, directions} = StepHistory[algorithm]
+        const { history, steps, directions } = StepHistory[algorithm]
         const algorithmSteps = history.length
-        
+
         // Calculate render range
         const startStep = LastRenderedStep
         const endStep = CurrentStep
@@ -328,10 +256,10 @@ function updateVisuals() {
         // Show which cell is being searched
         const searchingStep = CurrentStep <= algorithmSteps ? CurrentStep : -1
         if (searchingStep != -1 && CurrentStep < algorithmSteps) {
-            const [searchingX, searchingY] = Object.keys(history[searchingStep])[0].split("-").map(function(item) {
+            const [searchingX, searchingY] = Object.keys(history[searchingStep])[0].split("-").map(function (item) {
                 return parseInt(item);
             })
-            
+
             // Set searching cell to #FFFF00, filter generated by from: https://codepen.io/sosuke/pen/Pjoqqp
             CellReferences[algorithm][searchingY * Grid.width + searchingX].setAttribute("style", "filter: invert(33%) sepia(71%) saturate(4592%) hue-rotate(6deg) brightness(106%) contrast(106%);")
         }
@@ -343,20 +271,20 @@ function updateVisuals() {
                 const cells = Object.values(history[step]).flat()
                 cells.forEach(([x, y]) => {
                     const index = y * Grid.width + x
-                    if (CellReferences[algorithm][index].className !== "start" && 
+                    if (CellReferences[algorithm][index].className !== "start" &&
                         CellReferences[algorithm][index].className !== "target") {
                         CellReferences[algorithm][index].className = "unvisited"
                     }
                 })
             }
-        // Forward
+            // Forward
         } else {
             for (let step = startStep; step < endStep; step++) {
                 if (step >= algorithmSteps) continue
                 const cells = Object.values(history[step]).flat()
                 cells.forEach(([x, y]) => {
                     const index = y * Grid.width + x
-                    if (CellReferences[algorithm][index].className !== "start" && 
+                    if (CellReferences[algorithm][index].className !== "start" &&
                         CellReferences[algorithm][index].className !== "target") {
                         CellReferences[algorithm][index].className = "visited"
                     }
@@ -367,21 +295,21 @@ function updateVisuals() {
         // Draw and un-draw path
         const isFinalStep = CurrentStep >= algorithmSteps
         const wasFinalStep = LastRenderedStep >= algorithmSteps
-        
+
         if (wasFinalStep && !isFinalStep) {
             drawPath(algorithm, false)
         }
-        
+
         if (isFinalStep && steps.length > 0) {
             drawPath(algorithm, true)
         }
     }
-    
+
     LastRenderedStep = CurrentStep
 }
 
 function drawPath(algorithm, draw) {
-    const {steps, directions} = StepHistory[algorithm]
+    const { steps, directions } = StepHistory[algorithm]
     for (let pathStep = 1; pathStep < StepHistory[algorithm].steps.length; pathStep++) {
         const [x, y] = steps[pathStep]
         if (draw) {
@@ -452,6 +380,35 @@ function constructVisuals() {
     }
 
     document.getElementById("gridPreview").innerHTML = visualResult
+
+    document.querySelectorAll('[role="cell"]')
+        .forEach(cell => {
+            let pos = cell.id.split('-')
+            let content = ``
+            switch(cell.className) {
+                case 'start':
+                    content += "Path starts here."
+                    break
+                case "target":
+                case "targetReached":
+                    content += "Path ends here."
+                    break
+                case "wall":
+                    content += "Path cannot pass this cell."
+                    break
+                case "visited":
+                    content += "Algorithm have searched this cell."
+                    break
+                case "pathUp":
+                case "pathDown":
+                case "pathLeft":
+                case "pathRight":
+                    content += "Path decided by algorithm."
+                    break
+            }
+            const configObject = {title: `${pos[0]}, ${pos[1]}`, content: content, trigger: "hover"}
+            new bootstrap.Popover(cell, configObject)
+        })
 
     saveReferences()
 }
