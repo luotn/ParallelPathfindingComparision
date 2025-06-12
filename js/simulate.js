@@ -1,32 +1,32 @@
-let speed = 0.2
-let grid = new GRID()
-let algorithms = []
-let stepHistory = {}
-let benchmark
-let benchmarkResult = {}
-const warmups = 3
-const benchmarkTimes = 1000
-let maxStep = 0
-let currentStep = 0
-let playBackID
-let cellReferences
-let lastRenderedStep = 0
-let validResult = true
-const controlIcons = ["stepBackIcon", "stepForwardIcon", "rewindIcon", "playBackIcon", "forwardIcon"]
-const compressMap = {
+let Speed = 0.2
+let Grid = new GRID()
+let Algorithms = []
+let StepHistory = {}
+let Benchmark
+let BenchmarkResult = {}
+const Warmups = 3
+const BenchmarkTimes = 1000
+let MaxStep = 0
+let CurrentStep = 0
+let PlayBackID
+let CellReferences
+let LastRenderedStep = 0
+let ValidResult = true
+const ControlIcons = ["stepBackIcon", "stepForwardIcon", "rewindIcon", "playBackIcon", "forwardIcon"]
+const CompressMap = {
     'start': 's',
     'target': 't',
     'wall': 'w',
     'unvisited': 'u'
 }
-const decompressMap = {
+const DecompressMap = {
     's': 'start',
     't': 'target',
     'w': 'wall',
     'u': 'unvisited'
 }
-let positionViewer
-let positionText
+let PositionViewer
+let PositionText
 
 // luotn's github pages host
 let domain = "https://luotn.github.io/ParallelPathfindingComparision"
@@ -54,8 +54,8 @@ function init() {
                         sessionStorage.setItem("algorithms", algorithmString)
                         break
                     case "b":
-                        benchmark = decodeURI(keyValuePair[1])
-                        sessionStorage.setItem("benchmark", benchmark)
+                        Benchmark = decodeURI(keyValuePair[1])
+                        sessionStorage.setItem("benchmark", Benchmark)
                         break
                 }
             }
@@ -69,11 +69,11 @@ function init() {
     } else {
         gridString = sessionStorage.getItem("grid")
         algorithmString = sessionStorage.getItem("algorithms")
-        benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
+        Benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
     }
 
     // Redirect to index if missing setting(s)
-    if (gridString == undefined || algorithmString == undefined || benchmark == undefined) {
+    if (gridString == undefined || algorithmString == undefined || Benchmark == undefined) {
         alert("Simulation data missing!\nRedirecting to index page...")
         window.location.replace("./index.html")
         return
@@ -81,12 +81,12 @@ function init() {
 
     // Reconstruct grid from session storage
     plainObj = JSON.parse(gridString)
-    grid.height = plainObj.height
-    grid.width = plainObj.width
-    grid.data = plainObj.data
+    Grid.height = plainObj.height
+    Grid.width = plainObj.width
+    Grid.data = plainObj.data
 
     // Reconstuct algorithms from session storage
-    algorithms = JSON.parse(algorithmString)
+    Algorithms = JSON.parse(algorithmString)
 
     try {
         runAlgorithms()
@@ -96,16 +96,16 @@ function init() {
         return
     }
     
-    if (benchmark) {
+    if (Benchmark) {
         runBenchmark()
         let result = `
                     <li class="list-group-item" id="benchmarkResult">
                         Benchmark Result<br>
                     </li>`
-        for (let algorithm of algorithms) {
+        for (let algorithm of Algorithms) {
             result += `<li class="list-group-item">`
-            if (benchmarkResult[algorithm].avgTime != -1) {
-                result += `<a class="settingsPrompt">${algorithm}: ${stepHistory[algorithm].history.length} steps; length ${stepHistory[algorithm].steps.length - 1}; ${benchmarkResult[algorithm].avgTime}μs</a>`
+            if (BenchmarkResult[algorithm].avgTime != -1) {
+                result += `<a class="settingsPrompt">${algorithm}: ${StepHistory[algorithm].history.length} steps; length ${StepHistory[algorithm].steps.length - 1}; ${BenchmarkResult[algorithm].avgTime}μs</a>`
             } else {
                 result += `${algorithm}: Did not find a path`
             }
@@ -118,8 +118,8 @@ function init() {
     updateProgressBar()
     preLoadImages()
 
-    positionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
-    positionText = document.getElementById("positionText")
+    PositionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
+    PositionText = document.getElementById("positionText")
 
     addEventListeners()
 }
@@ -134,7 +134,7 @@ function preLoadImages() {
 
 // Add window event listener
 function addEventListeners() {
-    if (validResult) {
+    if (ValidResult) {
         window.addEventListener("keydown", function (event) {
             switch (event.key) {
                 case "a":
@@ -150,7 +150,7 @@ function addEventListeners() {
                     handleForward()
                     break
                 case "q":
-                    if (playBackID === null) {
+                    if (PlayBackID === null) {
                         startPlayback()
                     } else {
                         stopPlayback()
@@ -167,18 +167,60 @@ function addEventListeners() {
 
         let gridPreview = document.getElementById("gridPreview")
         gridPreview.addEventListener("mouseenter", function () {
-            positionViewer.show()
+            PositionViewer.show()
         })
         gridPreview.addEventListener("mouseleave", function () {
-            positionViewer.hide()
+            PositionViewer.hide()
         })
 
         // Add listener for each algorithm
-        for (let algorithm of algorithms) {
+        for (let algorithm of Algorithms) {
             let algorithmGrid = document.getElementsByClassName(algorithm)[0]
             algorithmGrid.querySelectorAll('[role="cell"]').forEach(function (cell) {
                 cell.addEventListener("mouseenter", function () {
-                    updatePositionViewer(algorithm, cell)
+                    PositionText.innerHTML = getCellPosText(algorithm, cell)
+                })
+                cell.addEventListener("click", function () {
+                    document.getElementById("cellDataViewerTitle").innerHTML = `${getCellPosText(algorithm, cell)} Information`
+                    bodyText = ""
+                    switch(cell.className) {
+                        case "start":
+                            bodyText = `This is the starting cell of the grid.<br>The ${algorithm} algorithm will always take this cell as step 0.`
+                            break
+                        case "target":
+                        case "targetReached":
+                            bodyText = `The ${algorithm} algorithm is trying to reach this cell.`
+                            break
+                        case "wall":
+                            bodyText = "This is a wall in the grid.<br>Path cannot pass through this cell."
+                            break
+                        case "unvisited":
+                            bodyText = `This is currently an empty cell in the grid.<br>`
+                            break
+                        case "pathUp":
+                        case "pathDown":
+                        case "pathLeft":
+                        case "pathRight":
+                            bodyText = `This is a cell on the path ${algorithm} algorithm chose to take.<br>`
+                            break
+                        case "visited":
+                            bodyText = `The ${algorithm} algorithm have evaluated or is evaluating this cell.<br>`
+                    }
+
+                    if(["visited", "unvisited", "pathUp", "pathDown", "pathLeft", "pathRight"].indexOf(cell.className) != -1) {
+                        const cellPos = getPosFromID(cell)
+                        console.log(`pos: ${[cellPos[0], cellPos[1]]}`)
+                        for(let i = 0; i < StepHistory[algorithm].steps.length; i++) {
+                            let step = StepHistory[algorithm].steps[i]
+                            if(step[0] == cellPos[0] && step[1] == cellPos[1]) {
+                                bodyText += `The ${algorithm} algorithm paths through this cell on step ${i}.`
+                            }
+                        }
+                    }
+
+                    document.getElementById("cellDataViewerBody").innerHTML = bodyText
+                    const cellDataViewer = new bootstrap.Modal('#cellDataViewer', null)
+                    cellDataViewer.show()
                 })
             })
         }
@@ -193,9 +235,9 @@ function addEventListeners() {
     }
 }
 
-function updatePositionViewer(algorithm, cell) {
+function getCellPosText(algorithm, cell) {
     let cellPosition = getPosFromID(cell)
-    positionText.innerHTML = `${algorithm}: [${cellPosition[0]}, ${cellPosition[1]}]`
+    return `${algorithm}: [${cellPosition[0]}, ${cellPosition[1]}]`
 }
 
 function getPosFromID(element) {
@@ -215,7 +257,7 @@ function editGrid() {
 
 function disableControls() {
     document.getElementById("speed").disabled = true
-    for (let icon of controlIcons) {
+    for (let icon of ControlIcons) {
         let control = document.getElementById(icon)
         control.classList += " disabled"
         control.removeAttribute("onclick")
@@ -226,32 +268,32 @@ function startPlayback() {
     document.getElementById("playBackIcon").src = "./icons/pause-fill.svg"
     document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
     document.getElementById("playBackText").innerHTML = `Pause(Q)`
-    if (!playBackID) {
-        playBackID = setInterval(handleStepForward, 1000 * speed)
+    if (!PlayBackID) {
+        PlayBackID = setInterval(handleStepForward, 1000 * Speed)
     }
 }
 
 function stopPlayback() {
-    clearInterval(playBackID)
-    playBackID = null
+    clearInterval(PlayBackID)
+    PlayBackID = null
     document.getElementById("playBackIcon").src = "./icons/play-fill.svg"
     document.getElementById("playBackIcon").setAttribute("onclick", "startPlayback()")
     document.getElementById("playBackText").innerHTML = `Start(Q)`
 }
 
 function handleForward() {
-    currentStep = maxStep
+    CurrentStep = MaxStep
     updateEverything()
 }
 
 function handleRewind() {
-    currentStep = 0
+    CurrentStep = 0
     updateEverything()
 }
 
 function handleStepForward() {
-    if (currentStep + 1 <= maxStep) {
-        currentStep++
+    if (CurrentStep + 1 <= MaxStep) {
+        CurrentStep++
         updateEverything()
     } else {
         stopPlayback()
@@ -259,8 +301,8 @@ function handleStepForward() {
 }
 
 function handleStepBack() {
-    if (currentStep - 1 >= 0) {
-        currentStep--
+    if (CurrentStep - 1 >= 0) {
+        CurrentStep--
         updateEverything()
     }
 }
@@ -272,26 +314,26 @@ function updateEverything() {
 
 // Update algorithm results
 function updateVisuals() {
-    for (const algorithm of algorithms) {
-        const {history, steps, directions} = stepHistory[algorithm]
+    for (const algorithm of Algorithms) {
+        const {history, steps, directions} = StepHistory[algorithm]
         const algorithmSteps = history.length
         
         // Calculate render range
-        const startStep = lastRenderedStep
-        const endStep = currentStep
+        const startStep = LastRenderedStep
+        const endStep = CurrentStep
         const isForward = endStep > startStep
 
-        cellReferences[algorithm].forEach(cell => cell.removeAttribute("style"))
+        CellReferences[algorithm].forEach(cell => cell.removeAttribute("style"))
 
         // Show which cell is being searched
-        const searchingStep = currentStep <= algorithmSteps ? currentStep : -1
-        if (searchingStep != -1 && currentStep < algorithmSteps) {
+        const searchingStep = CurrentStep <= algorithmSteps ? CurrentStep : -1
+        if (searchingStep != -1 && CurrentStep < algorithmSteps) {
             const [searchingX, searchingY] = Object.keys(history[searchingStep])[0].split("-").map(function(item) {
                 return parseInt(item);
             })
             
             // Set searching cell to #FFFF00, filter generated by from: https://codepen.io/sosuke/pen/Pjoqqp
-            cellReferences[algorithm][searchingY * grid.width + searchingX].setAttribute("style", "filter: invert(33%) sepia(71%) saturate(4592%) hue-rotate(6deg) brightness(106%) contrast(106%);")
+            CellReferences[algorithm][searchingY * Grid.width + searchingX].setAttribute("style", "filter: invert(33%) sepia(71%) saturate(4592%) hue-rotate(6deg) brightness(106%) contrast(106%);")
         }
 
         // Reverse
@@ -300,10 +342,10 @@ function updateVisuals() {
                 if (step >= algorithmSteps) continue
                 const cells = Object.values(history[step]).flat()
                 cells.forEach(([x, y]) => {
-                    const index = y * grid.width + x
-                    if (cellReferences[algorithm][index].className !== "start" && 
-                        cellReferences[algorithm][index].className !== "target") {
-                        cellReferences[algorithm][index].className = "unvisited"
+                    const index = y * Grid.width + x
+                    if (CellReferences[algorithm][index].className !== "start" && 
+                        CellReferences[algorithm][index].className !== "target") {
+                        CellReferences[algorithm][index].className = "unvisited"
                     }
                 })
             }
@@ -313,18 +355,18 @@ function updateVisuals() {
                 if (step >= algorithmSteps) continue
                 const cells = Object.values(history[step]).flat()
                 cells.forEach(([x, y]) => {
-                    const index = y * grid.width + x
-                    if (cellReferences[algorithm][index].className !== "start" && 
-                        cellReferences[algorithm][index].className !== "target") {
-                        cellReferences[algorithm][index].className = "visited"
+                    const index = y * Grid.width + x
+                    if (CellReferences[algorithm][index].className !== "start" && 
+                        CellReferences[algorithm][index].className !== "target") {
+                        CellReferences[algorithm][index].className = "visited"
                     }
                 })
             }
         }
 
         // Draw and un-draw path
-        const isFinalStep = currentStep >= algorithmSteps
-        const wasFinalStep = lastRenderedStep >= algorithmSteps
+        const isFinalStep = CurrentStep >= algorithmSteps
+        const wasFinalStep = LastRenderedStep >= algorithmSteps
         
         if (wasFinalStep && !isFinalStep) {
             drawPath(algorithm, false)
@@ -335,22 +377,22 @@ function updateVisuals() {
         }
     }
     
-    lastRenderedStep = currentStep
+    LastRenderedStep = CurrentStep
 }
 
 function drawPath(algorithm, draw) {
-    const {steps, directions} = stepHistory[algorithm]
-    for (let pathStep = 1; pathStep < stepHistory[algorithm].steps.length; pathStep++) {
+    const {steps, directions} = StepHistory[algorithm]
+    for (let pathStep = 1; pathStep < StepHistory[algorithm].steps.length; pathStep++) {
         const [x, y] = steps[pathStep]
         if (draw) {
-            cellReferences[algorithm][y * grid.width + x].className = directions[pathStep]
+            CellReferences[algorithm][y * Grid.width + x].className = directions[pathStep]
         } else {
-            cellReferences[algorithm][y * grid.width + x].className = currentStep == 0 ? "unvisited" : "visited"
+            CellReferences[algorithm][y * Grid.width + x].className = CurrentStep == 0 ? "unvisited" : "visited"
         }
     }
     // Update target cell
-    const [targetX, targetY] = grid.getTargetPos()
-    cellReferences[algorithm][targetY * grid.width + targetX].className = draw ? "targetReached" : "target"
+    const [targetX, targetY] = Grid.getTargetPos()
+    CellReferences[algorithm][targetY * Grid.width + targetX].className = draw ? "targetReached" : "target"
 }
 
 // Find which direction the path icon should face
@@ -369,40 +411,40 @@ function findDirection(currentCell, nextCell) {
 
 // Update progress bar
 function updateProgressBar() {
-    document.getElementById("stepProgressBG").setAttribute("aria-valuenow", `${currentStep}`)
-    document.getElementById("stepProgress").setAttribute("style", `width: ${currentStep / maxStep * 100}%`)
-    document.getElementById("progressBarText").innerHTML = `Step ${currentStep}/${maxStep}`
+    document.getElementById("stepProgressBG").setAttribute("aria-valuenow", `${CurrentStep}`)
+    document.getElementById("stepProgress").setAttribute("style", `width: ${CurrentStep / MaxStep * 100}%`)
+    document.getElementById("progressBarText").innerHTML = `Step ${CurrentStep}/${MaxStep}`
 }
 
 // Visualise result
 function constructVisuals() {
     // Find largest steps
-    for (const algorithm of algorithms) {
-        const algorithmStep = stepHistory[algorithm].history.length
-        maxStep = algorithmStep > maxStep ? algorithmStep : maxStep
+    for (const algorithm of Algorithms) {
+        const algorithmStep = StepHistory[algorithm].history.length
+        MaxStep = algorithmStep > MaxStep ? algorithmStep : MaxStep
     }
     let visualResult = ""
 
     // Add visual for each algorithm
-    for (const algorithm of algorithms) {
+    for (const algorithm of Algorithms) {
         // Statistics
-        if (validResult) {
-            visualResult += `${algorithm}: ${stepHistory[algorithm].history.length} steps found path with length ${stepHistory[algorithm].steps.length - 1} in ${Math.round(stepHistory[algorithm].time)}ms.`
+        if (ValidResult) {
+            visualResult += `${algorithm}: ${StepHistory[algorithm].history.length} steps found path with length ${StepHistory[algorithm].steps.length - 1} in ${Math.round(StepHistory[algorithm].time)}ms.`
         } else {
-            visualResult += `${algorithm}: Did NOT find path in ${Math.round(stepHistory[algorithm].time)}ms.`
+            visualResult += `${algorithm}: Did NOT find path in ${Math.round(StepHistory[algorithm].time)}ms.`
             document.getElementById("controlPrompt").innerHTML = "Controls Disabled!"
         }
 
         // Draw initial grid
         visualResult += `<table class="board ${algorithm}">\n<tbody>\n`
-        for (let y = 0; y < grid.height; y++) {
+        for (let y = 0; y < Grid.height; y++) {
             visualResult += `<tr id="row ${y}">\n`
-            for (let x = 0; x < grid.width; x++) {
+            for (let x = 0; x < Grid.width; x++) {
                 let style = ""
-                if (grid.getCell([x, y]) === "start")
+                if (Grid.getCell([x, y]) === "start")
                     style += " style='filter: invert(33%) sepia(71%) saturate(4592%) hue-rotate(6deg) brightness(106%) contrast(106%);'"
 
-                visualResult += `<td id="${x}-${y}" role="cell" class="${grid.getCell([x, y])}"${style}></td>\n`
+                visualResult += `<td id="${x}-${y}" role="cell" class="${Grid.getCell([x, y])}"${style}></td>\n`
             }
             visualResult += `</tr>\n`
         }
@@ -416,14 +458,14 @@ function constructVisuals() {
 
 // Save cell references
 function saveReferences() {
-    cellReferences = {}
-    for (const algorithm of algorithms) {
-        cellReferences[algorithm] = []
+    CellReferences = {}
+    for (const algorithm of Algorithms) {
+        CellReferences[algorithm] = []
         const table = document.querySelector(`table.board.${algorithm}`)
-        for (let y = 0; y < grid.height; y++) {
+        for (let y = 0; y < Grid.height; y++) {
             const row = table.rows[y]
-            for (let x = 0; x < grid.width; x++) {
-                cellReferences[algorithm][y * grid.width + x] = row.cells[x]
+            for (let x = 0; x < Grid.width; x++) {
+                CellReferences[algorithm][y * Grid.width + x] = row.cells[x]
             }
         }
     }
@@ -431,19 +473,19 @@ function saveReferences() {
 
 function runBenchmark() {
     // Run benchmark and save times to benchmarkResult
-    for (let algorithm of algorithms) {
-        if (stepHistory[algorithm].steps.length != 0) {
+    for (let algorithm of Algorithms) {
+        if (StepHistory[algorithm].steps.length != 0) {
             let totalTime = 0
 
             // Warmup
-            for (let i = 0; i < warmups; i++) {
-                let newGrid = cloneGrid(grid)
+            for (let i = 0; i < Warmups; i++) {
+                let newGrid = cloneGrid(Grid)
                 runAlgorithm(algorithm, newGrid)
             }
 
             // Run benchmark
-            for (let j = 0; j < benchmarkTimes; j++) {
-                let newGrid = cloneGrid(grid)
+            for (let j = 0; j < BenchmarkTimes; j++) {
+                let newGrid = cloneGrid(Grid)
                 const startTime = performance.now()
                 runAlgorithm(algorithm, newGrid)
                 const endTime = performance.now()
@@ -451,19 +493,19 @@ function runBenchmark() {
             }
 
             // Unit: μs
-            benchmarkResult[algorithm] = { avgTime: Math.round(1.0 * (totalTime / benchmarkTimes) * 1e3) }
+            BenchmarkResult[algorithm] = { avgTime: Math.round(1.0 * (totalTime / BenchmarkTimes) * 1e3) }
         } else {
-            benchmarkResult[algorithm] = { avgTime: -1 }
+            BenchmarkResult[algorithm] = { avgTime: -1 }
         }
     }
 }
 
 function runAlgorithms() {
     // Run algorithm and save step history to stepHistory
-    for (let algorithm of algorithms) {
+    for (let algorithm of Algorithms) {
         // Prepare to run algorithm
-        stepHistory[algorithm] = { time: 0, steps: [], directions: [] }
-        let newGrid = cloneGrid(grid)
+        StepHistory[algorithm] = { time: 0, steps: [], directions: [] }
+        let newGrid = cloneGrid(Grid)
 
         // RUN IT!
         const startTime = performance.now()
@@ -483,12 +525,12 @@ function runAlgorithms() {
 
         // Save execuation time, path and directions
         // Unit: ms - miliseconds
-        stepHistory[algorithm].time = endTime - startTime
-        stepHistory[algorithm].steps = path
-        stepHistory[algorithm].directions = directions
-        stepHistory[algorithm].history = history
-        if (validResult) {
-            validResult = stepHistory[algorithm].steps.length != 0
+        StepHistory[algorithm].time = endTime - startTime
+        StepHistory[algorithm].steps = path
+        StepHistory[algorithm].directions = directions
+        StepHistory[algorithm].history = history
+        if (ValidResult) {
+            ValidResult = StepHistory[algorithm].steps.length != 0
         }
     }
 }
@@ -527,8 +569,8 @@ function cloneGrid(original) {
 function updateSpeed() {
     let speedRaw = document.getElementById("speed").value
     // Deal with flot precision problem
-    speed = Math.round(1.0 * 100 - speedRaw * 100) / 100
-    document.getElementById("speedPrompt").innerHTML = `Step Interval: ${speed}s`
+    Speed = Math.round(1.0 * 100 - speedRaw * 100) / 100
+    document.getElementById("speedPrompt").innerHTML = `Step Interval: ${Speed}s`
 }
 
 function share() {
@@ -538,8 +580,8 @@ function share() {
 }
 
 function compressGrid() {
-    let compressed = grid.data.map(cell => compressMap[cell]).join('')
-    return `${grid.width}_${grid.height}_${compressed}`
+    let compressed = Grid.data.map(cell => CompressMap[cell]).join('')
+    return `${Grid.width}_${Grid.height}_${compressed}`
 }
 
 function decompressGrid(compressedStr) {
@@ -558,7 +600,7 @@ function decompressGrid(compressedStr) {
 
     let data = []
     for (let char of dataStr) {
-        let state = decompressMap[char];
+        let state = DecompressMap[char];
         if (!state) throw new Error(`Invalid character: ${char}`)
         data.push(state)
     }

@@ -50,7 +50,8 @@
                 Unvisited&nbsp;&nbsp;
                 <img src="./icons/square-fill.svg" alt="Visited" width="18" height="18" class="svgs">
                 Visited&nbsp;&nbsp;
-                <img src="./icons/square-fill.svg" alt="Visited" width="18" height="18" class="svgs" style='filter: invert(33%) sepia(71%) saturate(4592%) hue-rotate(6deg) brightness(106%) contrast(106%);'>
+                <img src="./icons/square-fill.svg" alt="Visited" width="18" height="18" class="svgs"
+                    style='filter: invert(33%) sepia(71%) saturate(4592%) hue-rotate(6deg) brightness(106%) contrast(106%);'>
                 Next Search&nbsp;&nbsp;
                 <img src="./icons/arrow-right-square-fill.svg" alt="Path" width="18" height="18" class="svgs">
                 Path&nbsp;&nbsp;
@@ -170,9 +171,28 @@
 
     <!-- Position viewer -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div id="positionViewer" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+        <div id="positionViewer" class="toast" role="alert" aria-live="assertive" aria-atomic="true"
+            data-bs-autohide="false">
             <div class="toast-body" id="positionText">
                 [0, 0]
+            </div>
+        </div>
+    </div>
+
+    <!-- Cell data viewer -->
+    <div class="modal" tabindex="-1" id="cellDataViewer">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cellDataViewerTitle">Cell Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="cellDataViewerBody">
+                    <p>Detail of this cell.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>

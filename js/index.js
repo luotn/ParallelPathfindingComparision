@@ -1,14 +1,14 @@
-let width = 0
-let height = 0
-let walls = []
-let start = [0, 0]
-let target = [0, 0]
-let holdingCell = null
-let lastCellLocation = []
-let gridOK = false
-let positionViewer
-let positionText
-let algorithms = []
+let Width = 0
+let Height = 0
+let Walls = []
+let Start = [0, 0]
+let Target = [0, 0]
+let HoldingCell = null
+let LastCellLocation = []
+let GridOK = false
+let PositionViewer
+let PositionText
+let Algorithms = []
 
 function init() {
     let gridString = sessionStorage.getItem("grid")
@@ -18,34 +18,34 @@ function init() {
         console.log("Reloading grid...")
         // Reconstruct grid object
         plainObj = JSON.parse(gridString)
-        height = plainObj.height
-        width = plainObj.width
+        Height = plainObj.height
+        Width = plainObj.width
 
         // Reconstuct algorithms
-        algorithms = JSON.parse(algorithmString)
+        Algorithms = JSON.parse(algorithmString)
 
         // Put grid setting back
-        document.getElementById("width").value = width
-        document.getElementById("height").value = height
+        document.getElementById("width").value = Width
+        document.getElementById("height").value = Height
         document.getElementById("benchmark").checked = benchmark
 
         // Put grid data back
         let result = `<table class="board">\n<tbody>\n`
-        for (let y = 0; y < height; y++) {
+        for (let y = 0; y < Height; y++) {
             result += `<tr id="row ${y}">\n`
-            for (let x = 0; x < width; x++) {
-                let cellData = plainObj.data[y * width + x]
+            for (let x = 0; x < Width; x++) {
+                let cellData = plainObj.data[y * Width + x]
                 result += `<td id="${x}-${y}" role="cell" class="${cellData}"></td>\n`
 
                 switch (cellData) {
                     case "start":
-                        start = [x, y]
+                        Start = [x, y]
                         break
                     case "target":
-                        target = [x, y]
+                        Target = [x, y]
                         break
                     case "wall":
-                        walls.push([x, y])
+                        Walls.push([x, y])
                         break
                 }
             }
@@ -55,36 +55,36 @@ function init() {
         document.getElementById("gridPreview").innerHTML = result
 
         // Put algorithms settings back
-        for (let algorithm of algorithms) {
+        for (let algorithm of Algorithms) {
             document.getElementById(algorithm).checked = true
         }
         addEventListeners()
-        gridOK = true
+        GridOK = true
         updateButtons()
     }
 
-    positionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
-    positionText = document.getElementById("positionText")
+    PositionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
+    PositionText = document.getElementById("positionText")
 }
 
 function clearWalls() {
-    for (let i = 0; i < walls.length; i++) {
-        let cell = walls[i]
+    for (let i = 0; i < Walls.length; i++) {
+        let cell = Walls[i]
         document.getElementById(`${cell[0]}-${cell[1]}`).className = "unvisited"
     }
-    walls = []
+    Walls = []
     updateButtons()
 }
 
 function createGrid() {
-    width = parseInt(document.getElementById("width").value)
-    height = parseInt(document.getElementById("height").value)
+    Width = parseInt(document.getElementById("width").value)
+    Height = parseInt(document.getElementById("height").value)
 
     // Draw grid
     let result = `<table class="board">\n<tbody>\n`
-    for (let y = 0; y < height; y++) {
+    for (let y = 0; y < Height; y++) {
         result += `<tr id="row ${y}">\n`
-        for (let x = 0; x < width; x++) {
+        for (let x = 0; x < Width; x++) {
             result += `<td id="${x}-${y}" role="cell" class="unvisited"></td>\n`
         }
         result += `</tr>\n`
@@ -93,21 +93,21 @@ function createGrid() {
     document.getElementById("gridPreview").innerHTML = result
 
     // For most grids
-    if (width > 1) {
-        start = [0, 0]
-        target = [1, 0]
+    if (Width > 1) {
+        Start = [0, 0]
+        Target = [1, 0]
         // Spcial case for 1 x n grid
-    } else if (width == 1) {
-        start = [0, 0]
-        target = [0, 1]
+    } else if (Width == 1) {
+        Start = [0, 0]
+        Target = [0, 1]
     }
 
     // Update cell for start and target
-    document.getElementById(`${start[0]}-${start[1]}`).className = "start"
-    document.getElementById(`${target[0]}-${target[1]}`).className = "target"
+    document.getElementById(`${Start[0]}-${Start[1]}`).className = "start"
+    document.getElementById(`${Target[0]}-${Target[1]}`).className = "target"
 
-    gridOK = true
-    walls = []
+    GridOK = true
+    Walls = []
     updateButtons()
 
     addEventListeners()
@@ -120,20 +120,20 @@ function addEventListeners() {
             if (event.button == 0) {
                 switch (cell.getAttribute("class")) {
                     case "start":
-                        holdingCell = "start"
+                        HoldingCell = "start"
                         break
                     case "target":
-                        holdingCell = "target"
+                        HoldingCell = "target"
                         break
                     case "unvisited":
-                        holdingCell = "wall"
+                        HoldingCell = "wall"
                         cell.className = "wall"
                         break
                     case "wall":
-                        holdingCell = "unvisited"
+                        HoldingCell = "unvisited"
                         cell.className = "unvisited"
                 }
-                gridOK = false
+                GridOK = false
                 updateButtons()
             }
         })
@@ -144,13 +144,13 @@ function addEventListeners() {
         cell.addEventListener("mouseenter", function () {
             updatePositionViewer(cell)
             cellClass = cell.getAttribute("class")
-            if (holdingCell == "start" || holdingCell == "target") {
+            if (HoldingCell == "start" || HoldingCell == "target") {
                 if (cellClass == "unvisited")
-                    updateCell(cell, holdingCell)
+                    updateCell(cell, HoldingCell)
             }
-            else if (holdingCell == "wall" || holdingCell == "unvisited") {
+            else if (HoldingCell == "wall" || HoldingCell == "unvisited") {
                 if (cellClass != "start" && cellClass != "target")
-                    updateCell(cell, holdingCell)
+                    updateCell(cell, HoldingCell)
             }
         })
 
@@ -159,34 +159,34 @@ function addEventListeners() {
         // Hold save sction until mouse up
         cell.addEventListener("mouseleave", function () {
             cellClass = cell.getAttribute("class")
-            if (cellClass == "start" && holdingCell == "start")
+            if (cellClass == "start" && HoldingCell == "start")
                 updateCell(cell, "unvisited")
-            else if (cellClass == "target" && holdingCell == "target")
+            else if (cellClass == "target" && HoldingCell == "target")
                 updateCell(cell, "unvisited")
         })
 
         // Save the current grid settings to global variable
         cell.addEventListener("mouseup", function (event) {
             if (event.button == 0) {
-                holdingCell = null
+                HoldingCell = null
                 try {
-                    start = getPosFromID(document.getElementsByClassName("start")[0])
-                    target = getPosFromID(document.getElementsByClassName("target")[0])
+                    Start = getPosFromID(document.getElementsByClassName("start")[0])
+                    Target = getPosFromID(document.getElementsByClassName("target")[0])
 
                     try {
                         wallElements = document.getElementsByClassName("wall")
-                        walls = []
+                        Walls = []
                         for (let i = 0; i < wallElements.length; i++) {
-                            walls[i] = getPosFromID(wallElements[i])
+                            Walls[i] = getPosFromID(wallElements[i])
                         }
                     } catch (error) {
-                        walls = []
+                        Walls = []
                     }
-                    gridOK = true
+                    GridOK = true
                     updateButtons()
                 } catch (error) {
                     alert(`Grid is missing start and/or target cell, click "Create Grid" to start over.`)
-                    gridOK = false
+                    GridOK = false
                     updateButtons()
                 }
             }
@@ -195,16 +195,16 @@ function addEventListeners() {
 
     let gridPreview = document.getElementById("gridPreview")
     gridPreview.addEventListener("mouseenter", function () {
-        positionViewer.show()
+        PositionViewer.show()
     })
     gridPreview.addEventListener("mouseleave", function () {
-        positionViewer.hide() 
+        PositionViewer.hide() 
     })
 }
 
 function updatePositionViewer(cell) {
     let cellPosition = getPosFromID(cell)
-    positionText.innerHTML = `[${cellPosition[0]}, ${cellPosition[1]}]`
+    PositionText.innerHTML = `[${cellPosition[0]}, ${cellPosition[1]}]`
 }
 
 function getPosFromID(element) {
@@ -226,35 +226,35 @@ function checkElementIsInt(element) {
         document.getElementById(element + "Group").className = "list-group-item"
     }
     if (element == "width")
-        width = data
+        Width = data
     else if (element == "height")
-        height = data
+        Height = data
 
-    gridOK = false
+    GridOK = false
     updateButtons()
 }
 
 function changeAlgorithm(algorithm) {
-    let index = algorithms.indexOf(algorithm)
+    let index = Algorithms.indexOf(algorithm)
     if (index == -1)
-        algorithms.push(algorithm)
+        Algorithms.push(algorithm)
     else
-        algorithms.splice(index, 1)
+        Algorithms.splice(index, 1)
     updateButtons()
 }
 
 function updateButtons() {
-    if (width != 0 && height != 0 && width * height > 1) {
+    if (Width != 0 && Height != 0 && Width * Height > 1) {
         document.getElementById("createGrid").disabled = false
     } else {
         document.getElementById("createGrid").disabled = true
     }
-    if (gridOK && walls.length > 0)
+    if (GridOK && Walls.length > 0)
         document.getElementById("clearWalls").disabled = false
     else
         document.getElementById("clearWalls").disabled = true
 
-    if (gridOK && algorithms.length > 0)
+    if (GridOK && Algorithms.length > 0)
         document.getElementById("simulate").disabled = false
     else
         document.getElementById("simulate").disabled = true
@@ -262,14 +262,14 @@ function updateButtons() {
 
 function simulate() {
     // Save simulation settings to session storage
-    let grid = new GRID(width, height)
-    grid.setCell(start, "start")
-    grid.setCell(target, "target")
-    walls.forEach(wall => {
+    let grid = new GRID(Width, Height)
+    grid.setCell(Start, "start")
+    grid.setCell(Target, "target")
+    Walls.forEach(wall => {
         grid.setCell(wall, "wall")
     })
     sessionStorage.setItem("grid", JSON.stringify(grid))
-    sessionStorage.setItem("algorithms", JSON.stringify(algorithms))
+    sessionStorage.setItem("algorithms", JSON.stringify(Algorithms))
 
     // Save benchmark settings to sessionStorage
     if (document.getElementById("benchmark").checked)
