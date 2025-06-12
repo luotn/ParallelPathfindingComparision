@@ -18,14 +18,14 @@ class AStar {
 
         this.gScore[`${start[0]}, ${start[1]}`] = 0
         const startFScore = this.grid.taxiCabDistanceToTarget(start)
-        this.priorityQueue.push({ pos: start, fScore: startFScore })
+        this.priorityQueue.push({pos: start, fScore: startFScore})
         this.parent[`${start[0]}, ${start[1]}`] = null
         let step = 0
 
         while (this.priorityQueue.length > 0) {
             // Hard copy queue to avoid further changes
             this.queueHistory[step] = Array.from(this.priorityQueue)
-            
+
             this.priorityQueue.sort((a, b) => a.fScore - b.fScore)
             const current = this.priorityQueue.shift().pos
             const [currentX, currentY] = current
@@ -58,7 +58,7 @@ class AStar {
                     this.parent[nextKey] = [currentX, currentY]
                     this.gScore[nextKey] = tentativeGScore
                     const fScore = tentativeGScore + this.grid.taxiCabDistanceToTarget(nextPos)
-                    this.priorityQueue.push({ pos: nextPos, fScore })
+                    this.priorityQueue.push({pos: nextPos, fScore})
                 }
             }
             step++

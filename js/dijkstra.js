@@ -17,7 +17,7 @@ class Dijkstra {
         const target = this.grid.target
 
         this.distances[`${start[0]}, ${start[1]}`] = 0
-        this.priorityQueue.push({ pos: start, distance: 0 })
+        this.priorityQueue.push({pos: start, distance: 0})
         this.parent[`${start[0]}, ${start[1]}`] = null
         let step = 0
 
@@ -56,7 +56,7 @@ class Dijkstra {
                 if (this.distances[nextKey] === undefined || tentativeDistance < this.distances[nextKey]) {
                     this.distances[nextKey] = tentativeDistance
                     this.parent[nextKey] = [currentX, currentY]
-                    this.priorityQueue.push({ pos: nextPos, distance: tentativeDistance })
+                    this.priorityQueue.push({pos: nextPos, distance: tentativeDistance})
                 }
             }
             step++
