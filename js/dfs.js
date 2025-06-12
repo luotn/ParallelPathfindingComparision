@@ -4,6 +4,7 @@ class DFS {
         this.grid.getStartPos()
         this.grid.getTargetPos()
         this.stack = []
+        this.stackHistory = []
         this.parent = {}
         this.directions = ["up", "down", "left", "right"]
         this.visitHistory = []
@@ -21,6 +22,9 @@ class DFS {
         let step = 0
 
         while (this.stack.length > 0) {
+            // Hard copy queue to avoid further changes
+            this.stackHistory[step] = Array.from(this.stack)
+            
             const current = this.stack.pop()
             const [currentX, currentY] = current
 
@@ -42,7 +46,7 @@ class DFS {
                     this.visitHistory[step][cellName].push(nextPos)
                     this.parent[`${nextPos[0]}, ${nextPos[1]}`] = [currentX, currentY]
                     const path = this._constructPath(nextPos)
-                    return [path, this.visitHistory]
+                    return [path, this.visitHistory, this.stackHistory]
                 }
 
                 if (cellState === "unvisited") {

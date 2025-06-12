@@ -4,6 +4,7 @@ class BFS {
         this.grid.getStartPos()
         this.grid.getTargetPos()
         this.queue = []
+        this.queueHistory = []
         this.parent = {}
         this.directions = ["up", "down", "left", "right"]
         this.visitHistory = []
@@ -20,6 +21,9 @@ class BFS {
         let step = 0
 
         while (this.queue.length > 0) {
+            // Hard copy queue to avoid further changes
+            this.queueHistory[step] = Array.from(this.queue)
+            
             const current = this.queue.shift()
             const [currentX, currentY] = current
 
@@ -42,7 +46,7 @@ class BFS {
                     this.visitHistory[step][cellName].push(nextPos)
                     this.parent[`${nextPos[0]}, ${nextPos[1]}`] = [currentX, currentY]
                     const path = this._constructPath(nextPos)
-                    return [path, this.visitHistory]
+                    return [path, this.visitHistory, this.queueHistory]
                 }
 
                 if (cellState === "unvisited") {

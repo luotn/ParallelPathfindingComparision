@@ -4,6 +4,7 @@ class AStar {
         this.grid.getStartPos()
         this.grid.getTargetPos()
         this.priorityQueue = []
+        this.queueHistory = []
         this.parent = {}
         this.gScore = {}
         this.directions = ["up", "down", "left", "right"]
@@ -22,6 +23,9 @@ class AStar {
         let step = 0
 
         while (this.priorityQueue.length > 0) {
+            // Hard copy queue to avoid further changes
+            this.queueHistory[step] = Array.from(this.priorityQueue)
+            
             this.priorityQueue.sort((a, b) => a.fScore - b.fScore)
             const current = this.priorityQueue.shift().pos
             const [currentX, currentY] = current
@@ -41,7 +45,7 @@ class AStar {
                 if (cellState === "target") {
                     this.visitHistory[step][cellName].push(nextPos)
                     this.parent[nextKey] = [currentX, currentY]
-                    return [this._constructPath(nextPos), this.visitHistory]
+                    return [this._constructPath(nextPos), this.visitHistory, this.queueHistory]
                 }
 
                 if (cellState === "unvisited" && !this.visitedHistory.has(nextKey)) {
