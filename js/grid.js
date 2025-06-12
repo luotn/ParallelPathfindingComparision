@@ -83,7 +83,7 @@ class GRID {
     }
 
     taxiCabDistanceToTarget(pos) {
-        return Math.abs(pos[0] - this.target[0]) + Math.abs(pos[1] - this.target[1])
+        return Math.abs(pos[0] - this.target[0]) + Math.abs(pos[1] - this.target[1]) - 1
     }
 
     print() {

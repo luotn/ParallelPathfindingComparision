@@ -11,6 +11,11 @@ let PositionText
 let Algorithms = []
 
 function init() {
+
+    // Init algorithm tool tips
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+
     let gridString = sessionStorage.getItem("grid")
     let algorithmString = sessionStorage.getItem("algorithms")
     let benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
@@ -198,7 +203,7 @@ function addEventListeners() {
         PositionViewer.show()
     })
     gridPreview.addEventListener("mouseleave", function () {
-        PositionViewer.hide() 
+        PositionViewer.hide()
     })
 }
 
