@@ -2,11 +2,28 @@ let GPUAVALIABLE
 let GPUDEVICE
 let CANVASCONTEXT
 let CANVASFORMAT
-const SIZE_X = 8
-const SIZE_Y = 6
-const BACKGROUNDCOLOR = {r: 0.8, g: 0.8, b: 0.8, a: 1}
+const CANVASDOMID = "grid-canvas"
+const BACKGROUNDCOLOR = { r: 0.9, g: 0.9, b: 0.9, a: 1 }
+const CELLCOLOR = `0.5, 0.5, 0.5, 1` //Red, Green, Blue, Alpha
+const STATE = {
+    EMPTY: 0,
+    START: -1,
+    TARGET: -2,
+    OBSTACLE: -3
+}
 
-async function initGPU() {
+// Example is 8 * 6 grid
+// Visited Score: any value > 0
+let CELLSTATE = new Int32Array([
+    -1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, -3, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, -2,
+])
+
+async function initGPU(canvasDomID) {
     if (!navigator.gpu) {
         alert("WebGPU not supported in this browser!\nPerformance will be drastically reduced!\nPlease use Chrome/Edge 113+, Safari Technology Preview, Opera 99+, Chrome for Android 138+, Samsung Internet 24+, Opera Mobile 80+ or enable WebGPU flag on Safari or Firefox.\nUsing default DOM rendering...")
         GPUAVALIABLE = false
@@ -16,8 +33,7 @@ async function initGPU() {
             alert("Your GPU does not support the full functionality of WebGPU!\nPerformance will be drastically reduced!\nUsing default DOM rendering...")
         } else {
             GPUDEVICE = await adapter.requestDevice()
-            const canvas = document.getElementById("grid-canvas")
-            CANVASCONTEXT = canvas.getContext("webgpu")
+            CANVASCONTEXT = document.getElementById(canvasDomID).getContext("webgpu")
             CANVASFORMAT = navigator.gpu.getPreferredCanvasFormat()
             CANVASCONTEXT.configure({
                 device: GPUDEVICE,
@@ -29,7 +45,7 @@ async function initGPU() {
 }
 
 async function init() {
-    await initGPU()
+    await initGPU(CANVASDOMID)
 
     const size_x = 8
     const size_y = 6
@@ -46,27 +62,30 @@ async function init() {
 function GPUDraw(size_x, size_y) {
     console.log("Using GPU render...")
 
-    // Create square
-    const vertices = new Float32Array([
+    // 1. Create arrays and format data for buffers
+    const totalCells = size_x * size_y
+
+    const cellVertices = new Float32Array([
         //   X,    Y,
-        -0.8, -0.8, // Triangle 1 (Blue)
+        -0.8, -0.8, // Triangle 1 (Top left)
         0.8, -0.8,
         0.8, 0.8,
 
-        -0.8, -0.8, // Triangle 2 (Red)
+        -0.8, -0.8, // Triangle 2 (Bottom right)
         0.8, 0.8,
         -0.8, 0.8,
     ])
 
-    const vertexBuffer = GPUDEVICE.createBuffer({
+    const cellPositionArray = new Float32Array([size_x, size_y])
+
+    // 2. Create buffers and buffer layouts
+    const cellVertexBuffer = GPUDEVICE.createBuffer({
         label: "Cell vertices",
-        size: vertices.byteLength,
+        size: cellVertices.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     })
 
-    GPUDEVICE.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/0, vertices)
-
-    const vertexBufferLayout = {
+    const cellVertexBufferLayout = {
         arrayStride: 8,
         attributes: [{
             format: "float32x2",
@@ -75,40 +94,86 @@ function GPUDraw(size_x, size_y) {
         }],
     }
 
+    const cellPositionBuffer = GPUDEVICE.createBuffer({
+        label: "Grid Uniforms",
+        size: cellPositionArray.byteLength,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    const stateBuffer = GPUDEVICE.createBuffer({
+        label: "Cell states buffer",
+        size: CELLSTATE.byteLength,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    })
+
+    // 3. Write to buffers
+    GPUDEVICE.queue.writeBuffer(cellVertexBuffer, /*bufferOffset=*/0, cellVertices)
+
+    GPUDEVICE.queue.writeBuffer(cellPositionBuffer, 0, cellPositionArray)
+
+    GPUDEVICE.queue.writeBuffer(stateBuffer, 0, CELLSTATE)
+
+    // 4. Create shader module
     const cellShaderModule = GPUDEVICE.createShaderModule({
         label: "Cell shader",
         code: `
             @group(0) @binding(0) var<uniform> grid: vec2f;
-
+            @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
+            
+            struct VertexOutput {
+                @builtin(position) position: vec4f,
+                // Google Chrome enforces: @interpolate(flat)
+                @location(0) @interpolate(flat) instanceIndex: u32,
+            }
+            
             @vertex
-            fn vertexMain(@location(0) pos: vec2f,
-                        @builtin(instance_index) instance: u32) ->
-                        @builtin(position) vec4f {
-
+            fn vertexMain(
+                @location(0) pos: vec2f,
+                @builtin(instance_index) instance: u32
+            ) -> VertexOutput {
                 let i = f32(instance);
-                // Compute the cell coordinate from the instance_index
                 let cell = vec2f(i % grid.x, floor(i / grid.x));
-
                 let cellOffset = cell / grid * 2;
                 let gridPos = (pos + 1) / grid - 1 + cellOffset;
-
-                return vec4f(gridPos, 0, 1);
+                
+                var output: VertexOutput;
+                output.position = vec4f(gridPos, 0, 1);
+                output.instanceIndex = instance;
+                return output;
             }
-
+            
+            fn stateToColor(state: i32) -> vec4f {
+                if (state == ${STATE.START}) {
+                    return vec4f(1.0, 0.0, 0.0, 1.0);
+                }
+                else if (state == ${STATE.TARGET}) {
+                    return vec4f(0.0, 1.0, 0.0, 1.0);
+                }
+                else if (state == ${STATE.OBSTACLE}) {
+                    return vec4f(0.0, 0.0, 0.0, 1.0);
+                }
+                else if (state == ${STATE.EMPTY}) {
+                    return vec4f(0.5, 0.5, 0.5, 1.0);
+                }
+                return vec4f(0.5, 0.0, 0.5, 1.0);
+            }
+            
             @fragment
-            fn fragmentMain() -> @location(0) vec4f {
-                return vec4f(1, 0, 0, 1);
+            fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
+                let state = cellStates[input.instanceIndex];
+                return stateToColor(state);
             }
         `
     })
 
+    // 5. Create pipeline
     const cellPipeline = GPUDEVICE.createRenderPipeline({
         label: "Cell pipeline",
         layout: "auto",
         vertex: {
             module: cellShaderModule,
             entryPoint: "vertexMain",
-            buffers: [vertexBufferLayout]
+            buffers: [cellVertexBufferLayout]
         },
         fragment: {
             module: cellShaderModule,
@@ -119,24 +184,21 @@ function GPUDraw(size_x, size_y) {
         }
     })
 
-    // Create group of squares
-    const uniformArray = new Float32Array([size_x, size_y])
-    const uniformBuffer = GPUDEVICE.createBuffer({
-        label: "Grid Uniforms",
-        size: uniformArray.byteLength,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    })
-    GPUDEVICE.queue.writeBuffer(uniformBuffer, 0, uniformArray)
-
-    const bindGroup = GPUDEVICE.createBindGroup({
+    // 6. Assign bind groups
+    const cellPosBindGroup = GPUDEVICE.createBindGroup({
         label: "Cell renderer bind group",
         layout: cellPipeline.getBindGroupLayout(0),
         entries: [{
             binding: 0,
-            resource: { buffer: uniformBuffer }
+            resource: {buffer: cellPositionBuffer}
+        },
+        {
+            binding: 1,
+            resource: {buffer: stateBuffer}
         }],
     })
 
+    // 7. Create encoder and set encoder parameters
     const encoder = GPUDEVICE.createCommandEncoder()
     const pass = encoder.beginRenderPass({
         colorAttachments: [{
@@ -148,17 +210,23 @@ function GPUDraw(size_x, size_y) {
     })
 
     pass.setPipeline(cellPipeline)
-    pass.setVertexBuffer(0, vertexBuffer)
-    pass.setBindGroup(0, bindGroup)
-    pass.draw(vertices.length / 2, size_x * size_y)
+    pass.setVertexBuffer(0, cellVertexBuffer)
+    pass.setBindGroup(0, cellPosBindGroup)
+    pass.draw(cellVertices.length / 2, size_x * size_y)
 
     pass.end()
 
     const commandBuffer = encoder.finish()
 
+    // 8. Submit render command
     GPUDEVICE.queue.submit([commandBuffer])
 }
 
 function DOMDraw() {
     console.log("Using CPU render!!!")
+}
+
+function updateCellState(index, newState) {
+    CELLSTATE = new Int32Array([newState])
+    GPUDEVICE.queue.writeBuffer(stateBuffer, index * Int32Array.BYTES_PER_ELEMENT, CELLSTATE)
 }
