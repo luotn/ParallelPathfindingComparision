@@ -12,6 +12,12 @@ const STATE = {
     OBSTACLE: -3
 }
 
+const TEXTURE_SIZE = 128; // 每个图标的尺寸
+const ATLAS_COLS = 8;     // 图集列数
+const ATLAS_ROWS = 1;     // 图集行数（可根据需要扩展）
+let textureAtlas = null;
+let sampler = null;
+
 // Example is 8 * 6 grid
 // Visited Score: any value > 0
 let CELLSTATE = new Int32Array([
@@ -51,12 +57,69 @@ async function init() {
     const size_y = 6
 
     if (GPUAVALIABLE == true) {
+        await createTextureAtlas();
         GPUDraw(size_x, size_y)
     } else if (GPUAVALIABLE == false) {
         DOMDraw()
     } else {
         alert("Error while initialising render engine!")
     }
+}
+
+async function createTextureAtlas() {
+    const canvas = document.createElement('canvas');
+    canvas.width = TEXTURE_SIZE * ATLAS_COLS;
+    canvas.height = TEXTURE_SIZE * ATLAS_ROWS;
+    const ctx = canvas.getContext('2d');
+
+    // 填充透明背景
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 绘制各种状态对应的图标
+    const icons = [
+        {state: STATE.START, text: "🌟", color: "red"},
+        {state: STATE.TARGET, text: "🏁", color: "green"},
+        {state: STATE.OBSTACLE, text: "❌", color: "black"},
+        {state: STATE.EMPTY, text: "", color: "rgba(0,0,0,0)"}
+    ]
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 100px Arial";
+
+    icons.forEach((icon, index) => {
+        const x = (index % ATLAS_COLS) * TEXTURE_SIZE + TEXTURE_SIZE / 2;
+        const y = (Math.floor(index / ATLAS_COLS)) * TEXTURE_SIZE + TEXTURE_SIZE / 2;
+
+        ctx.fillStyle = icon.color;
+        ctx.fillText(icon.text, x, y);
+    });
+
+    // 转换为ImageBitmap
+    const imageBitmap = await createImageBitmap(canvas);
+
+    // 创建WebGPU纹理
+    textureAtlas = GPUDEVICE.createTexture({
+        size: [canvas.width, canvas.height],
+        format: 'rgba8unorm',
+        usage: GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT
+    });
+
+    // 复制图像数据到纹理
+    GPUDEVICE.queue.copyExternalImageToTexture(
+        { source: imageBitmap },
+        { texture: textureAtlas },
+        [canvas.width, canvas.height]
+    );
+
+    // 创建采样器
+    sampler = GPUDEVICE.createSampler({
+        magFilter: 'linear',
+        minFilter: 'linear'
+    });
 }
 
 function GPUDraw(size_x, size_y) {
@@ -66,14 +129,14 @@ function GPUDraw(size_x, size_y) {
     const totalCells = size_x * size_y
 
     const cellVertices = new Float32Array([
-        //   X,    Y,
-        -0.8, -0.8, // Triangle 1 (Top left)
-        0.8, -0.8,
-        0.8, 0.8,
+        // X,    Y,    U,   V
+        -0.8, -0.8, 0.0, 0.0,
+        0.8, -0.8, 1.0, 0.0,
+        0.8, 0.8, 1.0, 1.0,
 
-        -0.8, -0.8, // Triangle 2 (Bottom right)
-        0.8, 0.8,
-        -0.8, 0.8,
+        -0.8, -0.8, 0.0, 0.0,
+        0.8, 0.8, 1.0, 1.0,
+        -0.8, 0.8, 0.0, 1.0
     ])
 
     const cellPositionArray = new Float32Array([size_x, size_y])
@@ -86,12 +149,19 @@ function GPUDraw(size_x, size_y) {
     })
 
     const cellVertexBufferLayout = {
-        arrayStride: 8,
-        attributes: [{
-            format: "float32x2",
-            offset: 0,
-            shaderLocation: 0, // Position, see vertex shader
-        }],
+        arrayStride: 16, // 4个float * 4字节
+        attributes: [
+            {
+                format: "float32x2",
+                offset: 0,
+                shaderLocation: 0 // 位置
+            },
+            {
+                format: "float32x2",
+                offset: 8,
+                shaderLocation: 1 // 纹理坐标
+            }
+        ]
     }
 
     const cellPositionBuffer = GPUDEVICE.createBuffer({
@@ -117,52 +187,81 @@ function GPUDraw(size_x, size_y) {
     const cellShaderModule = GPUDEVICE.createShaderModule({
         label: "Cell shader",
         code: `
-            @group(0) @binding(0) var<uniform> grid: vec2f;
-            @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
+        @group(0) @binding(0) var<uniform> grid: vec2f;
+        @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
+        @group(0) @binding(2) var texSampler: sampler;
+        @group(0) @binding(3) var textureAtlas: texture_2d<f32>;
+        
+        struct VertexOutput {
+            @builtin(position) position: vec4f,
+            @location(0) @interpolate(flat) instanceIndex: u32,
+            @location(1) texCoord: vec2f
+        }
+        
+        @vertex
+        fn vertexMain(
+            @location(0) pos: vec2f,
+            @location(1) uv: vec2f,
+            @builtin(instance_index) instance: u32
+        ) -> VertexOutput {
+            let i = f32(instance);
+            let cell = vec2f(i % grid.x, floor(i / grid.x));
+            let cellOffset = cell / grid * 2;
+            let gridPos = (pos + 1) / grid - 1 + cellOffset;
             
-            struct VertexOutput {
-                @builtin(position) position: vec4f,
-                // Google Chrome enforces: @interpolate(flat)
-                @location(0) @interpolate(flat) instanceIndex: u32,
+            var output: VertexOutput;
+            output.position = vec4f(gridPos, 0, 1);
+            output.instanceIndex = instance;
+            output.texCoord = uv;
+            return output;
+        }
+        
+        fn stateToAtlasUV(state: i32) -> vec2f {
+            // 映射状态到图集位置
+            var index = 0u;
+            if (state == ${STATE.START}) { index = 0u; }
+            else if (state == ${STATE.TARGET}) { index = 1u; }
+            else if (state == ${STATE.OBSTACLE}) { index = 2u; }
+            else { return vec2f(-1); } // 非特殊状态返回无效坐标
+            
+            // 计算纹理坐标 (0-1范围)
+            let atlasSize = vec2f(${TEXTURE_SIZE * ATLAS_COLS}.0, ${TEXTURE_SIZE * ATLAS_ROWS}.0);
+            let iconSize = vec2f(${TEXTURE_SIZE}.0);
+            
+            let col = index % ${ATLAS_COLS}u;
+            let row = index / ${ATLAS_COLS}u;
+            
+            let uvOffset = vec2f(f32(col) * iconSize.x / atlasSize.x,
+                                f32(row) * iconSize.y / atlasSize.y);
+            
+            return uvOffset;
+        }
+        
+        @fragment
+        fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
+            let state = cellStates[input.instanceIndex];
+            
+            // 特殊状态：使用纹理
+            let atlasUV = stateToAtlasUV(state);
+            
+            // 总是进行纹理采样，但在非特殊状态时忽略结果
+            let iconUV = vec2f(
+                atlasUV.x + input.texCoord.x / ${ATLAS_COLS}.0,
+                atlasUV.y + (1.0 - input.texCoord.y) / ${ATLAS_ROWS}.0
+            );
+            let sampledColor = textureSample(textureAtlas, texSampler, iconUV);
+            
+            // 现在可以安全地使用条件分支
+            if (atlasUV.x >= 0.0) {
+                return sampledColor;
             }
             
-            @vertex
-            fn vertexMain(
-                @location(0) pos: vec2f,
-                @builtin(instance_index) instance: u32
-            ) -> VertexOutput {
-                let i = f32(instance);
-                let cell = vec2f(i % grid.x, floor(i / grid.x));
-                let cellOffset = cell / grid * 2;
-                let gridPos = (pos + 1) / grid - 1 + cellOffset;
-                
-                var output: VertexOutput;
-                output.position = vec4f(gridPos, 0, 1);
-                output.instanceIndex = instance;
-                return output;
+            // 普通状态：使用纯色
+            if (state == ${STATE.EMPTY}) {
+                return vec4f(0.5, 0.5, 0.5, 1.0);
             }
-            
-            fn stateToColor(state: i32) -> vec4f {
-                if (state == ${STATE.START}) {
-                    return vec4f(1.0, 0.0, 0.0, 1.0);
-                }
-                else if (state == ${STATE.TARGET}) {
-                    return vec4f(0.0, 1.0, 0.0, 1.0);
-                }
-                else if (state == ${STATE.OBSTACLE}) {
-                    return vec4f(0.0, 0.0, 0.0, 1.0);
-                }
-                else if (state == ${STATE.EMPTY}) {
-                    return vec4f(0.5, 0.5, 0.5, 1.0);
-                }
-                return vec4f(0.5, 0.0, 0.5, 1.0);
-            }
-            
-            @fragment
-            fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-                let state = cellStates[input.instanceIndex];
-                return stateToColor(state);
-            }
+            return vec4f(0.5, 0.0, 0.5, 1.0); // 未知状态
+        }
         `
     })
 
@@ -188,14 +287,12 @@ function GPUDraw(size_x, size_y) {
     const cellPosBindGroup = GPUDEVICE.createBindGroup({
         label: "Cell renderer bind group",
         layout: cellPipeline.getBindGroupLayout(0),
-        entries: [{
-            binding: 0,
-            resource: {buffer: cellPositionBuffer}
-        },
-        {
-            binding: 1,
-            resource: {buffer: stateBuffer}
-        }],
+        entries: [
+            { binding: 0, resource: { buffer: cellPositionBuffer } },
+            { binding: 1, resource: { buffer: stateBuffer } },
+            { binding: 2, resource: sampler },
+            { binding: 3, resource: textureAtlas.createView() }
+        ]
     })
 
     // 7. Create encoder and set encoder parameters
@@ -212,7 +309,7 @@ function GPUDraw(size_x, size_y) {
     pass.setPipeline(cellPipeline)
     pass.setVertexBuffer(0, cellVertexBuffer)
     pass.setBindGroup(0, cellPosBindGroup)
-    pass.draw(cellVertices.length / 2, size_x * size_y)
+    pass.draw(6, size_x * size_y)
 
     pass.end()
 
@@ -226,7 +323,11 @@ function DOMDraw() {
     console.log("Using CPU render!!!")
 }
 
-function updateCellState(index, newState) {
-    CELLSTATE = new Int32Array([newState])
-    GPUDEVICE.queue.writeBuffer(stateBuffer, index * Int32Array.BYTES_PER_ELEMENT, CELLSTATE)
+async function updateCellState(index, newState) {
+    CELLSTATE[index] = newState;
+    GPUDEVICE.queue.writeBuffer(
+        stateBuffer,
+        index * Int32Array.BYTES_PER_ELEMENT,
+        new Int32Array([newState])
+    )
 }
