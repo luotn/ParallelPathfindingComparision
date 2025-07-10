@@ -29,27 +29,6 @@ let CELLSTATE = new Int32Array([
     0, 0, 0, 0, 0, 0, 0, -2,
 ])
 
-async function initGPU(canvasDomID) {
-    if (!navigator.gpu) {
-        alert("WebGPU not supported in this browser!\nPerformance will be drastically reduced!\nPlease use Chrome/Edge 113+, Safari Technology Preview, Opera 99+, Chrome for Android 138+, Samsung Internet 24+, Opera Mobile 80+ or enable WebGPU flag on Safari or Firefox.\nUsing default DOM rendering...")
-        GPUAVALIABLE = false
-    } else {
-        const adapter = await navigator.gpu.requestAdapter()
-        if (!adapter) {
-            alert("Your GPU does not support the full functionality of WebGPU!\nPerformance will be drastically reduced!\nUsing default DOM rendering...")
-        } else {
-            GPUDEVICE = await adapter.requestDevice()
-            CANVASCONTEXT = document.getElementById(canvasDomID).getContext("webgpu")
-            CANVASFORMAT = navigator.gpu.getPreferredCanvasFormat()
-            CANVASCONTEXT.configure({
-                device: GPUDEVICE,
-                format: CANVASFORMAT
-            })
-            GPUAVALIABLE = true
-        }
-    }
-}
-
 async function init() {
     await initGPU(CANVASDOMID)
 
@@ -66,8 +45,30 @@ async function init() {
     }
 }
 
+async function initGPU(canvasDomID) {
+    if (!navigator.gpu) {
+        alert("WebGPU not supported in this browser!\nPerformance will be drastically reduced!\nPlease use Chrome/Edge 113+, Safari Technology Preview, Opera 99+, Chrome for Android 138+, Samsung Internet 24+, Opera Mobile 80+ or enable WebGPU flag on Safari or Firefox.\nUsing default DOM rendering...")
+        GPUAVALIABLE = false
+    } else {
+        const adapter = await navigator.gpu.requestAdapter()
+        if (!adapter) {
+            alert("Your GPU does not support the full functionality of WebGPU!\nPerformance will be drastically reduced!\nUsing default DOM rendering...")
+        } else {
+            GPUDEVICE = await adapter.requestDevice()
+            CANVASCONTEXT = document.getElementById(canvasDomID).getContext("webgpu")
+            CANVASFORMAT = navigator.gpu.getPreferredCanvasFormat()
+            CANVASCONTEXT.configure({
+                device: GPUDEVICE,
+                format: CANVASFORMAT,
+                alphaMode: 'premultiplied',
+            })
+            GPUAVALIABLE = true
+        }
+    }
+}
+
 async function createTextureAtlas() {
-    const canvas = document.createElement('canvas');
+    const canvas = new OffscreenCanvas(TEXTURE_SIZE * ATLAS_COLS, TEXTURE_SIZE * ATLAS_ROWS);
     canvas.width = TEXTURE_SIZE * ATLAS_COLS;
     canvas.height = TEXTURE_SIZE * ATLAS_ROWS;
     const ctx = canvas.getContext('2d');
@@ -78,10 +79,10 @@ async function createTextureAtlas() {
 
     // 绘制各种状态对应的图标
     const icons = [
-        {state: STATE.START, text: "🌟", color: "red"},
-        {state: STATE.TARGET, text: "🏁", color: "green"},
-        {state: STATE.OBSTACLE, text: "❌", color: "black"},
-        {state: STATE.EMPTY, text: "", color: "rgba(0,0,0,0)"}
+        { state: STATE.START, text: "😀", color: "black" },
+        { state: STATE.TARGET, text: "🏁", color: "green" },
+        { state: STATE.OBSTACLE, text: "❌", color: "black" },
+        { state: STATE.EMPTY, text: "", color: "rgba(0,0,0,0)" }
     ]
 
     ctx.textAlign = "center";
@@ -126,8 +127,6 @@ function GPUDraw(size_x, size_y) {
     console.log("Using GPU render...")
 
     // 1. Create arrays and format data for buffers
-    const totalCells = size_x * size_y
-
     const cellVertices = new Float32Array([
         // X,    Y,    U,   V
         -0.8, -0.8, 0.0, 0.0,
