@@ -22,9 +22,9 @@ let textureAtlas
 let sampler
 
 const MATERIAL_MAP = [
-    { state: STATE.START, img: "emoji-sunglasses-fill" },
-    { state: STATE.TARGET, img: "door-closed" },
-    { state: STATE.OBSTACLE, img: "x-square-fill" },
+    {state: STATE.START, img: "emoji-sunglasses-fill"},
+    {state: STATE.TARGET, img: "door-closed"},
+    {state: STATE.OBSTACLE, img: "x-square"},
 ]
 
 // Visited Score: any value > 0
@@ -76,6 +76,7 @@ async function initGPU(canvasDomID) {
     }
 }
 
+// This implementation uses atlas/tile map to save texture
 async function createTextureAtlas() {
     // Load all icons, supports svg, png, etc.
     const materialImages = await Promise.all(
@@ -102,7 +103,7 @@ async function createTextureAtlas() {
 
     const ctx = textureCanvas.getContext('2d')
 
-    // 填充透明背景
+    // Fill tranparent background
     ctx.fillStyle = 'rgba(0,0,0,0)';
     ctx.fillRect(0, 0, textureCanvas.width, textureCanvas.height);
 
@@ -115,10 +116,10 @@ async function createTextureAtlas() {
     // @DEBUG Continued: View content of off screen canvas
     // document.body.appendChild(textureCanvas)
 
-    // 转换为ImageBitmap
+    // Convert canvas to bitmap
     const imageBitmap = await createImageBitmap(textureCanvas);
 
-    // 创建WebGPU纹理
+    // Create GPU texture
     textureAtlas = GPUDEVICE.createTexture({
         size: [textureCanvas.width, textureCanvas.height],
         format: 'rgba8unorm',
@@ -127,14 +128,14 @@ async function createTextureAtlas() {
             GPUTextureUsage.RENDER_ATTACHMENT
     });
 
-    // 复制图像数据到纹理
+    // Copy bitmap to texture buffer on gpu
     GPUDEVICE.queue.copyExternalImageToTexture(
-        { source: imageBitmap },
-        { texture: textureAtlas },
+        {source: imageBitmap},
+        {texture: textureAtlas},
         [textureCanvas.width, textureCanvas.height]
     );
 
-    // 创建采样器
+    // Create sampler
     sampler = GPUDEVICE.createSampler({
         magFilter: 'linear',
         minFilter: 'linear'
@@ -166,17 +167,17 @@ function GPUDraw(size_x, size_y) {
     })
 
     const cellVertexBufferLayout = {
-        arrayStride: 16, // 4个float * 4字节
+        arrayStride: 16, // 4 floats, 4 byte/float
         attributes: [
             {
                 format: "float32x2",
                 offset: 0,
-                shaderLocation: 0 // 位置
+                shaderLocation: 0 // position
             },
             {
                 format: "float32x2",
                 offset: 8,
-                shaderLocation: 1 // 纹理坐标
+                shaderLocation: 1 // Texture uv
             }
         ]
     }
@@ -194,7 +195,7 @@ function GPUDraw(size_x, size_y) {
     })
 
     // 3. Write to buffers
-    GPUDEVICE.queue.writeBuffer(cellVertexBuffer, /*bufferOffset=*/0, cellVertices)
+    GPUDEVICE.queue.writeBuffer(cellVertexBuffer, 0, cellVertices)
 
     GPUDEVICE.queue.writeBuffer(cellPositionBuffer, 0, cellPositionArray)
 
@@ -234,14 +235,15 @@ function GPUDraw(size_x, size_y) {
         }
         
         fn stateToAtlasUV(state: i32) -> vec2f {
-            // 映射状态到图集位置
+            // Project state to uv positions
             var index = 0u;
-            if (state == ${STATE.START}) { index = 0u; }
-            else if (state == ${STATE.TARGET}) { index = 1u; }
-            else if (state == ${STATE.OBSTACLE}) { index = 2u; }
-            else { return vec2f(-1); } // 非特殊状态返回无效坐标
+            if (state == ${STATE.START}) {index = 0u;}
+            else if (state == ${STATE.TARGET}) {index = 1u;}
+            else if (state == ${STATE.OBSTACLE}) {index = 2u;}
+            // Return invalid position if not using texture
+            else {return vec2f(-1);} 
             
-            // 计算纹理坐标 (0-1范围)
+            // Calculate texture position (range: 0 - 1)
             let atlasSize = vec2f(${TEXTURE_SIZE * ATLAS_COLS}.0, ${TEXTURE_SIZE * ATLAS_ROWS}.0);
             let iconSize = vec2f(${TEXTURE_SIZE}.0);
             
@@ -258,26 +260,27 @@ function GPUDraw(size_x, size_y) {
         fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
             let state = cellStates[input.instanceIndex];
             
-            // 特殊状态：使用纹理
+            // Use texture if cell in special state, not empty
             let atlasUV = stateToAtlasUV(state);
             
-            // 总是进行纹理采样，但在非特殊状态时忽略结果
+            // Always sample texture, ignore result if empty
             let iconUV = vec2f(
                 atlasUV.x + input.texCoord.x / ${ATLAS_COLS}.0,
                 atlasUV.y + (1.0 - input.texCoord.y) / ${ATLAS_ROWS}.0
             );
             let sampledColor = textureSample(textureAtlas, texSampler, iconUV);
             
-            // 现在可以安全地使用条件分支
             if (atlasUV.x >= 0.0) {
                 return sampledColor;
             }
             
-            // 普通状态：使用纯色
+            // Use full color if empty
             if (state == ${STATE.EMPTY}) {
                 return vec4f(0.5, 0.5, 0.5, 1.0);
             }
-            return vec4f(0.5, 0.0, 0.5, 1.0); // 未知状态
+            
+            // Use purple as fallback
+            return vec4f(0.5, 0.0, 0.5, 1.0);
         }
         `
     })
@@ -305,10 +308,10 @@ function GPUDraw(size_x, size_y) {
         label: "Cell renderer bind group",
         layout: cellPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: { buffer: cellPositionBuffer } },
-            { binding: 1, resource: { buffer: stateBuffer } },
-            { binding: 2, resource: sampler },
-            { binding: 3, resource: textureAtlas.createView() }
+            {binding: 0, resource: {buffer: cellPositionBuffer}},
+            {binding: 1, resource: {buffer: stateBuffer}},
+            {binding: 2, resource: sampler},
+            {binding: 3, resource: textureAtlas.createView()}
         ]
     })
 
