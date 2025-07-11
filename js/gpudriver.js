@@ -81,7 +81,7 @@ async function createTextureAtlas() {
     // Load all icons, supports svg, png, etc.
     const materialImages = await Promise.all(
         Object.values(MATERIAL_MAP).map(material =>
-            loadSVG(`../icons/${material.img}.svg`)
+            loadSVG(`./icons/${material.img}.svg`)
         )
     )
 
