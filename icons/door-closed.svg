@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-door-closed" viewBox="0 0 16 16">
-  <path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v13h1.5a.5.5 0 0 1 0 1h-13a.5.5 0 0 1 0-1H3zm1 13h8V2H4z"/>
-  <path d="M9 9a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="256px" height="256px" viewBox="0 0 256 256" version="1.1">
+<g id="surface1">
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 48 32 C 48 23.164062 55.164062 16 64 16 L 192 16 C 200.835938 16 208 23.164062 208 32 L 208 240 L 232 240 C 236.417969 240 240 243.582031 240 248 C 240 252.417969 236.417969 256 232 256 L 24 256 C 19.582031 256 16 252.417969 16 248 C 16 243.582031 19.582031 240 24 240 L 48 240 Z M 64 240 L 192 240 L 192 32 L 64 32 Z M 64 240 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 144 144 C 144 152.835938 151.164062 160 160 160 C 168.835938 160 176 152.835938 176 144 C 176 135.164062 168.835938 128 160 128 C 151.164062 128 144 135.164062 144 144 "/>
+</g>
 </svg>

@@ -12,28 +12,37 @@ const STATE = {
     OBSTACLE: -3
 }
 
-const TEXTURE_SIZE = 128; // 每个图标的尺寸
-const ATLAS_COLS = 8;     // 图集列数
-const ATLAS_ROWS = 1;     // 图集行数（可根据需要扩展）
-let textureAtlas = null;
-let sampler = null;
+// All texture used by gpu render have to be resized to a square with size TEXTURE_SIZE * TEXTURE_SIZE.
+const TEXTURE_SIZE = 256
+// Use minimal webgpu requirement of 8192 x 8192
+const defaultMaxTextureDimension2D = 8192
+let ATLAS_COLS
+let ATLAS_ROWS
+let textureAtlas
+let sampler
 
-// Example is 8 * 6 grid
+const MATERIAL_MAP = [
+    { state: STATE.START, img: "emoji-sunglasses-fill" },
+    { state: STATE.TARGET, img: "door-closed" },
+    { state: STATE.OBSTACLE, img: "x-square-fill" },
+]
+
 // Visited Score: any value > 0
-let CELLSTATE = new Int32Array([
-    -1, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, -3, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, -2,
-])
+let CELLSTATE
 
 async function init() {
     await initGPU(CANVASDOMID)
 
     const size_x = 8
     const size_y = 6
+    CELLSTATE = new Int32Array([
+        -1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, -3, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, -2,
+    ])
 
     if (GPUAVALIABLE == true) {
         await createTextureAtlas();
@@ -68,41 +77,50 @@ async function initGPU(canvasDomID) {
 }
 
 async function createTextureAtlas() {
-    const canvas = new OffscreenCanvas(TEXTURE_SIZE * ATLAS_COLS, TEXTURE_SIZE * ATLAS_ROWS);
-    canvas.width = TEXTURE_SIZE * ATLAS_COLS;
-    canvas.height = TEXTURE_SIZE * ATLAS_ROWS;
-    const ctx = canvas.getContext('2d');
+    // Load all icons, supports svg, png, etc.
+    const materialImages = await Promise.all(
+        Object.values(MATERIAL_MAP).map(material =>
+            loadSVG(`../icons/${material.img}.svg`)
+        )
+    )
+
+    // Calculate texture canvas(atlas) columns and rows
+    let size1d = TEXTURE_SIZE * materialImages.length
+
+    ATLAS_ROWS = Math.floor(size1d / defaultMaxTextureDimension2D) + 1
+
+    ATLAS_COLS = size1d >= defaultMaxTextureDimension2D ? Math.floor(defaultMaxTextureDimension2D / TEXTURE_SIZE) : materialImages.length
+
+    console.log(`Texture canvas col:${ATLAS_COLS}, row:${ATLAS_ROWS}`)
+
+    const textureCanvas = new OffscreenCanvas(TEXTURE_SIZE * ATLAS_COLS, TEXTURE_SIZE * ATLAS_ROWS);
+
+    // @DEBUG View content of off screen canvas
+    // const textureCanvas = document.createElement('canvas')
+    // textureCanvas.width = TEXTURE_SIZE * ATLAS_COLS;
+    // textureCanvas.height = TEXTURE_SIZE * ATLAS_ROWS;
+
+    const ctx = textureCanvas.getContext('2d')
 
     // 填充透明背景
     ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, textureCanvas.width, textureCanvas.height);
 
-    // 绘制各种状态对应的图标
-    const icons = [
-        { state: STATE.START, text: "😀", color: "black" },
-        { state: STATE.TARGET, text: "🏁", color: "green" },
-        { state: STATE.OBSTACLE, text: "❌", color: "black" },
-        { state: STATE.EMPTY, text: "", color: "rgba(0,0,0,0)" }
-    ]
+    for (let i = 0; i < materialImages.length; i++) {
+        const x = i % ATLAS_COLS * TEXTURE_SIZE;
+        const y = (Math.floor(i / ATLAS_COLS)) * TEXTURE_SIZE;
+        ctx.drawImage(materialImages[i], x, y)
+    }
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "bold 100px Arial";
-
-    icons.forEach((icon, index) => {
-        const x = (index % ATLAS_COLS) * TEXTURE_SIZE + TEXTURE_SIZE / 2;
-        const y = (Math.floor(index / ATLAS_COLS)) * TEXTURE_SIZE + TEXTURE_SIZE / 2;
-
-        ctx.fillStyle = icon.color;
-        ctx.fillText(icon.text, x, y);
-    });
+    // @DEBUG Continued: View content of off screen canvas
+    // document.body.appendChild(textureCanvas)
 
     // 转换为ImageBitmap
-    const imageBitmap = await createImageBitmap(canvas);
+    const imageBitmap = await createImageBitmap(textureCanvas);
 
     // 创建WebGPU纹理
     textureAtlas = GPUDEVICE.createTexture({
-        size: [canvas.width, canvas.height],
+        size: [textureCanvas.width, textureCanvas.height],
         format: 'rgba8unorm',
         usage: GPUTextureUsage.TEXTURE_BINDING |
             GPUTextureUsage.COPY_DST |
@@ -113,7 +131,7 @@ async function createTextureAtlas() {
     GPUDEVICE.queue.copyExternalImageToTexture(
         { source: imageBitmap },
         { texture: textureAtlas },
-        [canvas.width, canvas.height]
+        [textureCanvas.width, textureCanvas.height]
     );
 
     // 创建采样器
@@ -329,4 +347,11 @@ async function updateCellState(index, newState) {
         index * Int32Array.BYTES_PER_ELEMENT,
         new Int32Array([newState])
     )
+}
+
+async function loadSVG(url) {
+    const img = new Image()
+    img.src = url
+    await img.decode()
+    return createImageBitmap(img)
 }

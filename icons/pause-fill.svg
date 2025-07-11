@@ -1,3 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pause-fill" viewBox="0 0 16 16">
-  <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="256px" height="256px" viewBox="0 0 256 256" version="1.1">
+<g id="surface1">
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 88 56 C 101.253906 56 112 66.746094 112 80 L 112 176 C 112 189.253906 101.253906 200 88 200 C 74.746094 200 64 189.253906 64 176 L 64 80 C 64 66.746094 74.746094 56 88 56 M 168 56 C 181.253906 56 192 66.746094 192 80 L 192 176 C 192 189.253906 181.253906 200 168 200 C 154.746094 200 144 189.253906 144 176 L 144 80 C 144 66.746094 154.746094 56 168 56 "/>
+</g>
 </svg>
