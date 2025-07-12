@@ -15,6 +15,8 @@
     <script src="js/bfs.js"></script>
     <script src="js/dfs.js"></script>
     <script src="js/dijkstra.js"></script>
+    <script src="js/domdriver.js"></script>
+    <script src="js/gpudriver.js"></script>
 </head>
 
 <body onload="init()">
@@ -161,6 +163,9 @@
             </div>
             <div class="col-10" id="gridPreview">
                 Running algorithm(s)...<br>
+                <div class="container">
+                    <canvas id="grid-canvas" width="800" height="600"></canvas>
+                </div>
             </div>
 
             <div class="col-12" id="credit">

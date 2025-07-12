@@ -1,210 +1,179 @@
-let GPUAVALIABLE
-let GPUDEVICE
-let CANVASCONTEXT
-let CANVASFORMAT
-const CANVASDOMID = "grid-canvas"
-const BACKGROUNDCOLOR = { r: 0.9, g: 0.9, b: 0.9, a: 1 }
-const CELLCOLOR = `0.5, 0.5, 0.5, 1` //Red, Green, Blue, Alpha
-const STATE = {
-    EMPTY: 0,
-    START: -1,
-    TARGET: -2,
-    OBSTACLE: -3
-}
-
-// All texture used by gpu render have to be resized to a square with size TEXTURE_SIZE * TEXTURE_SIZE.
-const TEXTURE_SIZE = 256
-// Use minimal webgpu requirement of 8192 x 8192
-const defaultMaxTextureDimension2D = 8192
-let ATLAS_COLS
-let ATLAS_ROWS
-let textureAtlas
-let sampler
-
-const MATERIAL_MAP = [
-    {state: STATE.START, img: "emoji-sunglasses-fill"},
-    {state: STATE.TARGET, img: "door-closed"},
-    {state: STATE.OBSTACLE, img: "x-square"},
-]
-
-// Visited Score: any value > 0
-let CELLSTATE
-
-async function init() {
-    await initGPU(CANVASDOMID)
-
-    const size_x = 8
-    const size_y = 6
-    CELLSTATE = new Int32Array([
-        -1, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, -3, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, -2,
-    ])
-
-    if (GPUAVALIABLE == true) {
-        await createTextureAtlas();
-        GPUDraw(size_x, size_y)
-    } else if (GPUAVALIABLE == false) {
-        DOMDraw()
-    } else {
-        alert("Error while initialising render engine!")
-    }
-}
-
-async function initGPU(canvasDomID) {
-    if (!navigator.gpu) {
-        alert("WebGPU not supported in this browser!\nPerformance will be drastically reduced!\nPlease use Chrome/Edge 113+, Safari Technology Preview, Opera 99+, Chrome for Android 138+, Samsung Internet 24+, Opera Mobile 80+ or enable WebGPU flag on Safari or Firefox.\nUsing default DOM rendering...")
-        GPUAVALIABLE = false
-    } else {
-        const adapter = await navigator.gpu.requestAdapter()
-        if (!adapter) {
-            alert("Your GPU does not support the full functionality of WebGPU!\nPerformance will be drastically reduced!\nUsing default DOM rendering...")
-        } else {
-            GPUDEVICE = await adapter.requestDevice()
-            CANVASCONTEXT = document.getElementById(canvasDomID).getContext("webgpu")
-            CANVASFORMAT = navigator.gpu.getPreferredCanvasFormat()
-            CANVASCONTEXT.configure({
-                device: GPUDEVICE,
-                format: CANVASFORMAT,
-                alphaMode: 'premultiplied',
-            })
-            GPUAVALIABLE = true
+class GPUDriver {
+    constructor(targetDOMElement) {
+        this.GPUAVALIABLE = false
+        this.GPUDEVICE
+        this.CANVASCONTEXT
+        this.CANVASFORMAT
+        this.targetDOMElement = targetDOMElement
+        this.BACKGROUNDCOLOR = {r: 0.9, g: 0.9, b: 0.9, a: 1}
+        this.CELLCOLOR = `0.5, 0.5, 0.5, 1` //Red, Green, Blue, Alpha
+        this.STATE = {
+            EMPTY: 0,
+            START: -1,
+            TARGET: -2,
+            OBSTACLE: -3
         }
-    }
-}
-
-// This implementation uses atlas/tile map to save texture
-async function createTextureAtlas() {
-    // Load all icons, supports svg, png, etc.
-    const materialImages = await Promise.all(
-        Object.values(MATERIAL_MAP).map(material =>
-            loadSVG(`./icons/${material.img}.svg`)
-        )
-    )
-
-    // Calculate texture canvas(atlas) columns and rows
-    let size1d = TEXTURE_SIZE * materialImages.length
-
-    ATLAS_ROWS = Math.floor(size1d / defaultMaxTextureDimension2D) + 1
-
-    ATLAS_COLS = size1d >= defaultMaxTextureDimension2D ? Math.floor(defaultMaxTextureDimension2D / TEXTURE_SIZE) : materialImages.length
-
-    console.log(`Texture canvas col:${ATLAS_COLS}, row:${ATLAS_ROWS}`)
-
-    const textureCanvas = new OffscreenCanvas(TEXTURE_SIZE * ATLAS_COLS, TEXTURE_SIZE * ATLAS_ROWS);
-
-    // @DEBUG View content of off screen canvas
-    // const textureCanvas = document.createElement('canvas')
-    // textureCanvas.width = TEXTURE_SIZE * ATLAS_COLS;
-    // textureCanvas.height = TEXTURE_SIZE * ATLAS_ROWS;
-
-    const ctx = textureCanvas.getContext('2d')
-
-    // Fill tranparent background
-    ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.fillRect(0, 0, textureCanvas.width, textureCanvas.height);
-
-    for (let i = 0; i < materialImages.length; i++) {
-        const x = i % ATLAS_COLS * TEXTURE_SIZE;
-        const y = (Math.floor(i / ATLAS_COLS)) * TEXTURE_SIZE;
-        ctx.drawImage(materialImages[i], x, y)
-    }
-
-    // @DEBUG Continued: View content of off screen canvas
-    // document.body.appendChild(textureCanvas)
-
-    // Convert canvas to bitmap
-    const imageBitmap = await createImageBitmap(textureCanvas);
-
-    // Create GPU texture
-    textureAtlas = GPUDEVICE.createTexture({
-        size: [textureCanvas.width, textureCanvas.height],
-        format: 'rgba8unorm',
-        usage: GPUTextureUsage.TEXTURE_BINDING |
-            GPUTextureUsage.COPY_DST |
-            GPUTextureUsage.RENDER_ATTACHMENT
-    });
-
-    // Copy bitmap to texture buffer on gpu
-    GPUDEVICE.queue.copyExternalImageToTexture(
-        {source: imageBitmap},
-        {texture: textureAtlas},
-        [textureCanvas.width, textureCanvas.height]
-    );
-
-    // Create sampler
-    sampler = GPUDEVICE.createSampler({
-        magFilter: 'linear',
-        minFilter: 'linear'
-    });
-}
-
-function GPUDraw(size_x, size_y) {
-    console.log("Using GPU render...")
-
-    // 1. Create arrays and format data for buffers
-    const cellVertices = new Float32Array([
-        // X,    Y,    U,   V
-        -0.8, -0.8, 0.0, 0.0,
-        0.8, -0.8, 1.0, 0.0,
-        0.8, 0.8, 1.0, 1.0,
-
-        -0.8, -0.8, 0.0, 0.0,
-        0.8, 0.8, 1.0, 1.0,
-        -0.8, 0.8, 0.0, 1.0
-    ])
-
-    const cellPositionArray = new Float32Array([size_x, size_y])
-
-    // 2. Create buffers and buffer layouts
-    const cellVertexBuffer = GPUDEVICE.createBuffer({
-        label: "Cell vertices",
-        size: cellVertices.byteLength,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    })
-
-    const cellVertexBufferLayout = {
-        arrayStride: 16, // 4 floats, 4 byte/float
-        attributes: [
-            {
-                format: "float32x2",
-                offset: 0,
-                shaderLocation: 0 // position
-            },
-            {
-                format: "float32x2",
-                offset: 8,
-                shaderLocation: 1 // Texture uv
-            }
+        // Visited Score: any value > 0
+        this.CELLSTATE
+        // All texture used by gpu render have to be resized to a square with size TEXTURE_SIZE * TEXTURE_SIZE.
+        this.TEXTURE_SIZE = 256
+        // Use minimal webgpu requirement of 8192 x 8192
+        this.defaultMaxTextureDimension2D = 8192
+        this.ATLAS_COLS
+        this.ATLAS_ROWS
+        this.textureAtlas
+        this.sampler
+        this.MATERIAL_MAP = [
+            {state: this.STATE.START, img: "emoji-sunglasses-fill"},
+            {state: this.STATE.TARGET, img: "door-closed"},
+            {state: this.STATE.OBSTACLE, img: "x-square"},
         ]
     }
 
-    const cellPositionBuffer = GPUDEVICE.createBuffer({
-        label: "Grid Uniforms",
-        size: cellPositionArray.byteLength,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    })
+    async init() {
+        if (navigator.gpu) {
+            const adapter = await navigator.gpu.requestAdapter()
+            if (adapter) {
+                this.GPUDEVICE = await adapter.requestDevice()
+                this.CANVASCONTEXT = document.getElementById(this.targetDOMElement).getContext("webgpu")
+                this.CANVASFORMAT = navigator.gpu.getPreferredCanvasFormat()
+                this.CANVASCONTEXT.configure({
+                    device: this.GPUDEVICE,
+                    format: this.CANVASFORMAT,
+                    alphaMode: 'premultiplied',
+                })
+                this.GPUAVALIABLE = true
+            }
+        }
+    }
 
-    const stateBuffer = GPUDEVICE.createBuffer({
-        label: "Cell states buffer",
-        size: CELLSTATE.byteLength,
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    })
+    // This implementation uses atlas/tile map to save texture
+    async createTextureAtlas() {
+        // Load all icons, supports svg, png, etc.
+        const materialImages = await Promise.all(
+            Object.values(this.MATERIAL_MAP).map(material =>
+                this.loadSVG(`./icons/${material.img}.svg`)
+            )
+        )
 
-    // 3. Write to buffers
-    GPUDEVICE.queue.writeBuffer(cellVertexBuffer, 0, cellVertices)
+        // Calculate texture canvas(atlas) columns and rows
+        let size1d = this.TEXTURE_SIZE * materialImages.length
 
-    GPUDEVICE.queue.writeBuffer(cellPositionBuffer, 0, cellPositionArray)
+        this.ATLAS_ROWS = Math.floor(size1d / this.defaultMaxTextureDimension2D) + 1
 
-    GPUDEVICE.queue.writeBuffer(stateBuffer, 0, CELLSTATE)
+        this.ATLAS_COLS = size1d >= this.defaultMaxTextureDimension2D ? Math.floor(this.defaultMaxTextureDimension2D / this.TEXTURE_SIZE) : materialImages.length
 
-    // 4. Create shader module
-    const cellShaderModule = GPUDEVICE.createShaderModule({
-        label: "Cell shader",
-        code: `
+        const textureCanvas = new OffscreenCanvas(this.TEXTURE_SIZE * this.ATLAS_COLS, this.TEXTURE_SIZE * this.ATLAS_ROWS)
+
+        // @DEBUG View content of off screen canvas
+        // const textureCanvas = document.createElement('canvas')
+        // textureCanvas.width = this.TEXTURE_SIZE * this.ATLAS_COLS;
+        // textureCanvas.height = this.TEXTURE_SIZE * this.ATLAS_ROWS;
+
+        const ctx = textureCanvas.getContext('2d')
+
+        // Fill tranparent background
+        ctx.fillStyle = 'rgba(0,0,0,0)'
+        ctx.fillRect(0, 0, textureCanvas.width, textureCanvas.height)
+
+        for (let i = 0; i < materialImages.length; i++) {
+            const x = i % this.ATLAS_COLS * this.TEXTURE_SIZE
+            const y = (Math.floor(i / this.ATLAS_COLS)) * this.TEXTURE_SIZE
+            ctx.drawImage(materialImages[i], x, y)
+        }
+
+        // @DEBUG Continued: View content of off screen canvas
+        // document.body.appendChild(textureCanvas)
+
+        // Convert canvas to bitmap
+        const imageBitmap = await createImageBitmap(textureCanvas)
+
+        // Create GPU texture
+        this.textureAtlas = this.GPUDEVICE.createTexture({
+            size: [textureCanvas.width, textureCanvas.height],
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_DST |
+                GPUTextureUsage.RENDER_ATTACHMENT
+        })
+
+        // Copy bitmap to texture buffer on gpu
+        this.GPUDEVICE.queue.copyExternalImageToTexture(
+            {source: imageBitmap},
+            {texture: this.textureAtlas},
+            [textureCanvas.width, textureCanvas.height]
+        )
+
+        // Create sampler
+        this.sampler = this.GPUDEVICE.createSampler({
+            magFilter: 'linear',
+            minFilter: 'linear'
+        })
+    }
+
+    GPUDraw(size_x, size_y) {
+        console.log("Using GPU render...")
+
+        // 1. Create arrays and format data for buffers
+        const cellVertices = new Float32Array([
+            // X,    Y,    U,   V
+            -0.8, -0.8, 0.0, 0.0,
+            0.8, -0.8, 1.0, 0.0,
+            0.8, 0.8, 1.0, 1.0,
+
+            -0.8, -0.8, 0.0, 0.0,
+            0.8, 0.8, 1.0, 1.0,
+            -0.8, 0.8, 0.0, 1.0
+        ])
+
+        const cellPositionArray = new Float32Array([size_x, size_y])
+
+        // 2. Create buffers and buffer layouts
+        const cellVertexBuffer = this.GPUDEVICE.createBuffer({
+            label: "Cell vertices",
+            size: cellVertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        })
+
+        const cellVertexBufferLayout = {
+            arrayStride: 16, // 4 floats, 4 byte/float
+            attributes: [
+                {
+                    format: "float32x2",
+                    offset: 0,
+                    shaderLocation: 0 // position
+                },
+                {
+                    format: "float32x2",
+                    offset: 8,
+                    shaderLocation: 1 // Texture uv
+                }
+            ]
+        }
+
+        const cellPositionBuffer = this.GPUDEVICE.createBuffer({
+            label: "Grid Uniforms",
+            size: cellPositionArray.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        })
+
+        const stateBuffer = this.GPUDEVICE.createBuffer({
+            label: "Cell states buffer",
+            size: CELLSTATE.byteLength,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        })
+
+        // 3. Write to buffers
+        this.GPUDEVICE.queue.writeBuffer(cellVertexBuffer, 0, cellVertices)
+
+        this.GPUDEVICE.queue.writeBuffer(cellPositionBuffer, 0, cellPositionArray)
+
+        this.GPUDEVICE.queue.writeBuffer(stateBuffer, 0, CELLSTATE)
+
+        // 4. Create shader module
+        const cellShaderModule = this.GPUDEVICE.createShaderModule({
+            label: "Cell shader",
+            code: `
         @group(0) @binding(0) var<uniform> grid: vec2f;
         @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
         @group(0) @binding(2) var texSampler: sampler;
@@ -237,18 +206,18 @@ function GPUDraw(size_x, size_y) {
         fn stateToAtlasUV(state: i32) -> vec2f {
             // Project state to uv positions
             var index = 0u;
-            if (state == ${STATE.START}) {index = 0u;}
-            else if (state == ${STATE.TARGET}) {index = 1u;}
-            else if (state == ${STATE.OBSTACLE}) {index = 2u;}
+            if (state == ${this.STATE.START}) {index = 0u;}
+            else if (state == ${this.STATE.TARGET}) {index = 1u;}
+            else if (state == ${this.STATE.OBSTACLE}) {index = 2u;}
             // Return invalid position if not using texture
             else {return vec2f(-1);} 
             
             // Calculate texture position (range: 0 - 1)
-            let atlasSize = vec2f(${TEXTURE_SIZE * ATLAS_COLS}.0, ${TEXTURE_SIZE * ATLAS_ROWS}.0);
-            let iconSize = vec2f(${TEXTURE_SIZE}.0);
+            let atlasSize = vec2f(${this.TEXTURE_SIZE * this.ATLAS_COLS}.0, ${this.TEXTURE_SIZE * this.ATLAS_ROWS}.0);
+            let iconSize = vec2f(${this.TEXTURE_SIZE}.0);
             
-            let col = index % ${ATLAS_COLS}u;
-            let row = index / ${ATLAS_COLS}u;
+            let col = index % ${this.ATLAS_COLS}u;
+            let row = index / ${this.ATLAS_COLS}u;
             
             let uvOffset = vec2f(f32(col) * iconSize.x / atlasSize.x,
                                 f32(row) * iconSize.y / atlasSize.y);
@@ -265,8 +234,8 @@ function GPUDraw(size_x, size_y) {
             
             // Always sample texture, ignore result if empty
             let iconUV = vec2f(
-                atlasUV.x + input.texCoord.x / ${ATLAS_COLS}.0,
-                atlasUV.y + (1.0 - input.texCoord.y) / ${ATLAS_ROWS}.0
+                atlasUV.x + input.texCoord.x / ${this.ATLAS_COLS}.0,
+                atlasUV.y + (1.0 - input.texCoord.y) / ${this.ATLAS_ROWS}.0
             );
             let sampledColor = textureSample(textureAtlas, texSampler, iconUV);
             
@@ -275,7 +244,7 @@ function GPUDraw(size_x, size_y) {
             }
             
             // Use full color if empty
-            if (state == ${STATE.EMPTY}) {
+            if (state == ${this.STATE.EMPTY}) {
                 return vec4f(0.5, 0.5, 0.5, 1.0);
             }
             
@@ -283,78 +252,100 @@ function GPUDraw(size_x, size_y) {
             return vec4f(0.5, 0.0, 0.5, 1.0);
         }
         `
-    })
+        })
 
-    // 5. Create pipeline
-    const cellPipeline = GPUDEVICE.createRenderPipeline({
-        label: "Cell pipeline",
-        layout: "auto",
-        vertex: {
-            module: cellShaderModule,
-            entryPoint: "vertexMain",
-            buffers: [cellVertexBufferLayout]
-        },
-        fragment: {
-            module: cellShaderModule,
-            entryPoint: "fragmentMain",
-            targets: [{
-                format: CANVASFORMAT
+        // 5. Create pipeline
+        const cellPipeline = this.GPUDEVICE.createRenderPipeline({
+            label: "Cell pipeline",
+            layout: "auto",
+            vertex: {
+                module: cellShaderModule,
+                entryPoint: "vertexMain",
+                buffers: [cellVertexBufferLayout]
+            },
+            fragment: {
+                module: cellShaderModule,
+                entryPoint: "fragmentMain",
+                targets: [{
+                    format: this.CANVASFORMAT
+                }]
+            }
+        })
+
+        // 6. Assign bind groups
+        const cellPosBindGroup = this.GPUDEVICE.createBindGroup({
+            label: "Cell renderer bind group",
+            layout: cellPipeline.getBindGroupLayout(0),
+            entries: [
+                {binding: 0, resource: {buffer: cellPositionBuffer}},
+                {binding: 1, resource: {buffer: stateBuffer}},
+                {binding: 2, resource: this.sampler},
+                {binding: 3, resource: this.textureAtlas.createView()}
+            ]
+        })
+
+        // 7. Create encoder and set encoder parameters
+        const encoder = this.GPUDEVICE.createCommandEncoder()
+        const pass = encoder.beginRenderPass({
+            colorAttachments: [{
+                view: this.CANVASCONTEXT.getCurrentTexture().createView(),
+                loadOp: "clear",
+                clearValue: this.BACKGROUNDCOLOR,
+                storeOp: "store",
             }]
-        }
-    })
+        })
 
-    // 6. Assign bind groups
-    const cellPosBindGroup = GPUDEVICE.createBindGroup({
-        label: "Cell renderer bind group",
-        layout: cellPipeline.getBindGroupLayout(0),
-        entries: [
-            {binding: 0, resource: {buffer: cellPositionBuffer}},
-            {binding: 1, resource: {buffer: stateBuffer}},
-            {binding: 2, resource: sampler},
-            {binding: 3, resource: textureAtlas.createView()}
-        ]
-    })
+        pass.setPipeline(cellPipeline)
+        pass.setVertexBuffer(0, cellVertexBuffer)
+        pass.setBindGroup(0, cellPosBindGroup)
+        pass.draw(6, size_x * size_y)
 
-    // 7. Create encoder and set encoder parameters
-    const encoder = GPUDEVICE.createCommandEncoder()
-    const pass = encoder.beginRenderPass({
-        colorAttachments: [{
-            view: CANVASCONTEXT.getCurrentTexture().createView(),
-            loadOp: "clear",
-            clearValue: BACKGROUNDCOLOR,
-            storeOp: "store",
-        }]
-    })
+        pass.end()
 
-    pass.setPipeline(cellPipeline)
-    pass.setVertexBuffer(0, cellVertexBuffer)
-    pass.setBindGroup(0, cellPosBindGroup)
-    pass.draw(6, size_x * size_y)
+        const commandBuffer = encoder.finish()
 
-    pass.end()
+        // 8. Submit render command
+        this.GPUDEVICE.queue.submit([commandBuffer])
+    }
 
-    const commandBuffer = encoder.finish()
+    updateCellState(index, newState) {
+        this.CELLSTATE[index] = newState;
+        this.GPUDEVICE.queue.writeBuffer(
+            stateBuffer,
+            index * Int32Array.BYTES_PER_ELEMENT,
+            new Int32Array([newState])
+        )
+    }
 
-    // 8. Submit render command
-    GPUDEVICE.queue.submit([commandBuffer])
+    async loadSVG(url) {
+        const img = new Image()
+        img.src = url
+        await img.decode()
+        return createImageBitmap(img)
+    }
 }
 
-function DOMDraw() {
-    console.log("Using CPU render!!!")
-}
+async function initWebGPU() {
+    let gpuDriver = new GPUDriver("grid-canvas")
+    await gpuDriver.init()
 
-async function updateCellState(index, newState) {
-    CELLSTATE[index] = newState;
-    GPUDEVICE.queue.writeBuffer(
-        stateBuffer,
-        index * Int32Array.BYTES_PER_ELEMENT,
-        new Int32Array([newState])
-    )
-}
+    const size_x = 8
+    const size_y = 6
+    CELLSTATE = new Int32Array([
+        -1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, -3, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, -2,
+    ])
 
-async function loadSVG(url) {
-    const img = new Image()
-    img.src = url
-    await img.decode()
-    return createImageBitmap(img)
+    if (gpuDriver.GPUAVALIABLE == true) {
+        await gpuDriver.createTextureAtlas()
+        gpuDriver.GPUDraw(size_x, size_y)
+    } else if (gpuDriver.GPUAVALIABLE == false) {
+        console.log("Using CPU render!!!")
+    } else {
+        alert("Error while initialising render engine!")
+    }
 }
