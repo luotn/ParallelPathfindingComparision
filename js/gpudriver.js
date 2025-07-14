@@ -36,12 +36,13 @@ class GPUDriver {
         let canvaswidth = this.Grid.width * this.cellSize
         // Safe distance to right edge defaults to 20
         let canvasDOMWidth = document.getElementById(targetDOMElement).offsetWidth - 10
-        // @TODO Add grid size limit to editor: webgpu default draw limit 8192 / smallest cell size 18 = approx 455 which is 207,025 cells
+        // @TODO Add grid size limit to editor: webgpu default draw limit 8192 / smallest cell size 10 = 819 which is 670,761 cells
         if (canvaswidth > canvasDOMWidth) {
             console.log("shrinking scale...")
             this.cellSize = Math.floor(canvasDOMWidth / this.Grid.width)
-            // 18 is a reasonable size to still make out the icons
-            this.cellSize = this.cellSize < 18 ? 18: this.cellSize
+            // 10 is a reasonable size to still make out the icons,
+            // on a 1080p display it shows 158 cells without introducing scrolling.
+            this.cellSize = this.cellSize < 10 ? 10: this.cellSize
             canvaswidth = this.Grid.width * this.cellSize
             console.log(`Grid width: ${this.Grid.width}, canvas width: ${canvasDOMWidth}, shrink to cell size: ${this.cellSize}`)
         }
