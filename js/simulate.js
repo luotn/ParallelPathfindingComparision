@@ -34,7 +34,8 @@ let domain = "https://luotn.github.io/ParallelPathfindingComparision"
 // host locally
 // let domain = "http://127.0.0.1:5500"
 
-let renderDriver
+let renderEngine
+const GRIDDOMROOT = "gridPreview"
 
 async function init() {
     let urlQuery = window.location.search.substring(1)
@@ -116,18 +117,15 @@ async function init() {
         document.getElementById("benchmarks").innerHTML = result
     }
 
-    renderDriver = new GPUDriver("grid-canvas")
-    await renderDriver.init()
-    if (renderDriver.GPUAVALIABLE) {
-        console.log("Using WebGPU to render...")
+    renderEngine = new GPUDriver(Grid, Algorithms, StepHistory, GRIDDOMROOT)
+    if (!await renderEngine.getGPUAvaliablity()) {
+        renderEngine = new DOMDriver(Grid, Algorithms, StepHistory, GRIDDOMROOT)
     } else {
-        console.log("Using DOM(CPU) to render...")
-        renderDriver = new DOMDriver(Grid, Algorithms, StepHistory, "gridPreview")
-        
+        await renderEngine.init()
     }
-    // constructVisuals()
+    renderEngine.drawGrid()
+
     // updateProgressBar()
-    // preLoadImages()
 
     // PositionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
     // PositionText = document.getElementById("positionText")

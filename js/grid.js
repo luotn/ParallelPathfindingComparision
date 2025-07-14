@@ -122,4 +122,33 @@ class GRID {
         }
         console.log(result)
     }
+
+    toCellState() {
+        let result = []
+        // Reverse rows for gpu
+        for(let y = this.height - 1; y >= 0 ; y--) {
+            for(let x = 0; x < this.width; x++) {
+                switch (this.data[this.width * y + x]) {
+                    case "unvisited":
+                        result.push(0)
+                        break
+                    case "visited":
+                        result.push(0)
+                        break
+                    case "start":
+                        result.push(-1)
+                        break
+                    case "target":
+                        result.push(-2)
+                        break
+                    case "wall":
+                        result.push(-3)
+                        break
+                    default:
+                        result.push(-10)
+                }
+            }
+        }
+        return new Int32Array(result)
+    }
 }

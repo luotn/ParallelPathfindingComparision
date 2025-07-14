@@ -6,19 +6,14 @@ class DOMDriver {
         this.DOMElementRoot = targetDOMElement
         this.CellReferences = {}
         this.preLoadImages()
-        return this.constructVisuals()
     }
+
     // Visualise result
-    constructVisuals() {
-        // Find largest steps
-        for (const algorithm of this.Algorithms) {
-            const algorithmStep = this.StepHistory[algorithm].history.length
-            MaxStep = algorithmStep > MaxStep ? algorithmStep : MaxStep
-        }
+    drawGrid() {
         let visualResult = `<a style="color: orange">WARNING: WebGPU or the full functionality of WebGPU is not supported in this browser!</a><br>Performance will be drastically reduced!<br>Please use Chrome/Edge 113+, Safari Technology Preview, Opera 99+, Chrome for Android 138+, Samsung Internet 24+, Opera Mobile 80+ <br>Or enable WebGPU flag on Safari or Firefox.<br><br>`
 
         // Add visual for each algorithm
-        for (const algorithm of Algorithms) {
+        for (const algorithm of this.Algorithms) {
             // Statistics
             visualResult += `${algorithm}: ${this.StepHistory[algorithm].history.length} steps found path with length ${this.StepHistory[algorithm].steps.length - 1} in ${Math.round(this.StepHistory[algorithm].time)}ms.`
 
@@ -44,11 +39,18 @@ class DOMDriver {
     }
 
     preLoadImages() {
-        var image = new Image();
-        image.src = "./icons/arrow-down-square-fill.svg"
+        var image = new Image()
         image.src = "./icons/arrow-up-square-fill.svg"
+        image.src = "./icons/arrow-down-square-fill.svg"
         image.src = "./icons/arrow-left-square-fill.svg"
+        image.src = "./icons/arrow-right-square-fill.svg"
         image.src = "./icons/door-open-fill.svg"
+        image.src = "./icons/door-closed.svg"
+        image.src = "./icons/emoji-sunglasses-fill.svg"
+        image.src = "./icons/emoji-sunglasses-fill.svg"
+        image.src = "./icons/square-fill.svg"
+        image.src = "./icons/square.svg"
+        image.src = "./icons/x-square.svg"
     }
 
     // Save cell references
@@ -89,7 +91,7 @@ class DOMDriver {
             const searchingStep = CurrentStep <= algorithmSteps ? CurrentStep : -1
             if (searchingStep != -1 && CurrentStep < algorithmSteps) {
                 const [searchingX, searchingY] = Object.keys(history[searchingStep])[0].split("-").map(function (item) {
-                    return parseInt(item);
+                    return parseInt(item)
                 })
 
                 // Queue might be array or objects, convert array into objects and rename different markings to score
