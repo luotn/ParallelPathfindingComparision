@@ -1,40 +1,14 @@
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: rgb(30, 33, 36);
-        color: white;
-    }
-
-    a {
-        color: white;
-    }
-
-    .svgs {
-        filter: invert();
-    }
-
-    #gridPreview td{
-        filter: invert();
-        color: black;
-    }
-
-    .board td {
-        border: 1px solid gray;
-    }
+body {
+    background-color: rgb(238, 238, 238);
+    color: black;
 }
 
-@media (prefers-color-scheme: light) {
-    body {
-        background-color: rgb(238, 238, 238);
-        color: black;
-    }
+a {
+    color: black;
+}
 
-    a {
-        color: black;
-    }
-
-    .board td {
-        border: 1px solid gray;
-    }
+.board td {
+    border: 1px solid gray;
 }
 
 .svgs {

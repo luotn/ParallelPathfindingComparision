@@ -9,7 +9,7 @@ class GPUDriver {
         this.CANVASCONTEXTS = []
         this.CANVASFORMAT
         this.DOMElementRoot = targetDOMElement
-        this.BACKGROUNDCOLOR = { r: 0.9, g: 0.9, b: 0.9, a: 1 }
+        this.BACKGROUNDCOLOR = {r: 0.9, g: 0.9, b: 0.9, a: 1}
         this.CELLCOLOR = `0.5, 0.5, 0.5, 1` //Red, Green, Blue, Alpha
         this.STATE = {
             EMPTY: 0,
@@ -28,9 +28,27 @@ class GPUDriver {
         this.textureAtlas
         this.sampler
         this.MATERIAL_MAP = [
-            { state: this.STATE.START, img: "emoji-sunglasses-fill" },
-            { state: this.STATE.TARGET, img: "door-closed" },
-            { state: this.STATE.OBSTACLE, img: "x-square" },
+            {state: this.STATE.START, img: "emoji-sunglasses-fill"},
+            {state: this.STATE.TARGET, img: "door-closed"},
+            {state: this.STATE.OBSTACLE, img: "x-square"},
+        ]
+        this.cellSize = 30
+        let canvaswidth = this.Grid.width * this.cellSize
+        // Safe distance to right edge defaults to 20
+        let canvasDOMWidth = document.getElementById(targetDOMElement).offsetWidth - 10
+        // @TODO Add grid size limit to editor: webgpu default draw limit 8192 / smallest cell size 18 = approx 455 which is 207,025 cells
+        if (canvaswidth > canvasDOMWidth) {
+            console.log("shrinking scale...")
+            this.cellSize = Math.floor(canvasDOMWidth / this.Grid.width)
+            // 18 is a reasonable size to still make out the icons
+            this.cellSize = this.cellSize < 18 ? 18: this.cellSize
+            canvaswidth = this.Grid.width * this.cellSize
+            console.log(`Grid width: ${this.Grid.width}, canvas width: ${canvasDOMWidth}, shrink to cell size: ${this.cellSize}`)
+        }
+        let canvasheight = this.Grid.height * this.cellSize
+        this.CanvasSize = [
+            canvaswidth,
+            canvasheight,
         ]
     }
 
@@ -44,7 +62,7 @@ class GPUDriver {
             visualResult += `${algorithm}: ${this.StepHistory[algorithm].history.length} steps found path with length ${this.StepHistory[algorithm].steps.length - 1} in ${Math.round(this.StepHistory[algorithm].time)}ms.<br>`
 
             // Add grid canvases and init gpu drivers
-            visualResult += `<canvas id="${algorithm}-canvas" width="800" height="600"></canvas><br>`
+            visualResult += `<canvas id="${algorithm}-canvas" width="${this.CanvasSize[0]}" height="${this.CanvasSize[1]}"></canvas><br><br>`
         }
 
         document.getElementById(this.DOMElementRoot).innerHTML = visualResult
