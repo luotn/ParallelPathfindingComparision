@@ -37,6 +37,8 @@ let domain = "https://luotn.github.io/ParallelPathfindingComparision"
 let renderEngine
 const GRIDDOMROOT = "gridPreview"
 
+let lastMousePos = [0, 0]
+
 async function init() {
     let urlQuery = window.location.search.substring(1)
     let gridString
@@ -117,25 +119,33 @@ async function init() {
         document.getElementById("benchmarks").innerHTML = result
     }
 
-    renderEngine = new GPUDriver(Grid, Algorithms, StepHistory, GRIDDOMROOT)
+    renderEngine = new GPUDriver(Grid, Algorithms, StepHistory, QueueHistory, GRIDDOMROOT)
     if (!await renderEngine.getGPUAvaliablity()) {
-        renderEngine = new DOMDriver(Grid, Algorithms, StepHistory, GRIDDOMROOT)
+        renderEngine = new DOMDriver(Grid, Algorithms, StepHistory, QueueHistory, GRIDDOMROOT)
     } else {
         await renderEngine.init()
     }
     renderEngine.drawGrid()
 
-    // updateProgressBar()
+    // Find largest steps
+    for (const algorithm of Algorithms) {
+        const algorithmStep = StepHistory[algorithm].history.length
+        MaxStep = algorithmStep > MaxStep ? algorithmStep : MaxStep
+    }
 
-    // PositionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
-    // PositionText = document.getElementById("positionText")
+    updateProgressBar()
 
-    // addEventListeners()
+    PositionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
+    PositionViewer.show()
+    PositionText = document.getElementById("positionText")
+
+    addEventListeners()
 }
 
 // Add window event listener
 function addEventListeners() {
     if (ValidResult) {
+        // Keyboard controls
         window.addEventListener("keydown", function (event) {
             switch (event.key) {
                 case "a":
@@ -166,25 +176,35 @@ function addEventListeners() {
 
         })
 
-        let gridPreview = document.getElementById("gridPreview")
-        gridPreview.addEventListener("mouseenter", function () {
-            PositionViewer.show()
-        })
-        gridPreview.addEventListener("mouseleave", function () {
-            PositionViewer.hide()
-        })
-
-        // Add listener for each algorithm
-        for (let algorithm of Algorithms) {
-            let algorithmGrid = document.getElementsByClassName(algorithm)[0]
-            algorithmGrid.querySelectorAll('[role="cell"]').forEach(function (cell) {
-                cell.addEventListener("mouseenter", function () {
-                    PositionText.innerHTML = getCellPosText(algorithm, cell)
+        // Show mouse position in PositionViewer
+        // For CPU render
+        if (renderEngine instanceof DOMDriver) {
+            for (let algorithm of Algorithms) {
+                let algorithmGrid = document.getElementsByClassName(algorithm)[0]
+                algorithmGrid.querySelectorAll('[role="cell"]').forEach(function (cell) {
+                    cell.addEventListener("mouseenter", function () {
+                        PositionText.innerHTML = getCellPosText(algorithm, cell)
+                    })
                 })
-            })
+            }
+            // For WebGPU render
+        } else {
+            for (let algorithm of Algorithms) {
+                let algorithmCanvas = document.getElementById(`${algorithm}-canvas`)
+                algorithmCanvas.addEventListener('mousemove', function (e) {
+                    var rect = algorithmCanvas.getBoundingClientRect()
+                    let mouseX = e.clientX - rect.left
+                    let mouseY = e.clientY - rect.top
+                    let cellPos = renderEngine.getMousePosition(mouseX, mouseY)
+                    if (cellPos[0] != lastMousePos[0] || cellPos[1] != lastMousePos[1]) {
+                        PositionText.innerHTML = `${algorithm}: [${cellPos[0]}, ${cellPos[1]}]`
+                        lastMousePos = cellPos
+                    }
+                })
+            }
         }
+
     } else {
-        console.log("Locking controls")
         disableControls()
         window.addEventListener("keydown", function (event) {
             if (event.key == "r") {
@@ -228,7 +248,7 @@ function startPlayback() {
     document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
     document.getElementById("playBackText").innerHTML = `Pause(Q)`
     if (!PlayBackID) {
-        PlayBackID = setInterval(handleStepForward, 1000 * Speed)
+        PlayBackID = setInterval(handleStepForward(), 1000 * Speed)
     }
 }
 
@@ -267,7 +287,7 @@ function handleStepBack() {
 }
 
 function updateEverything() {
-    updateVisuals()
+    LastRenderedStep = renderEngine.updateVisuals(CurrentStep, LastRenderedStep)
     updateProgressBar()
 }
 

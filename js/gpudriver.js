@@ -1,15 +1,15 @@
 class GPUDriver {
-    constructor(grid, algorithms, stepHistory, targetDOMElement) {
+    constructor(grid, algorithms, stepHistory, queueHistory, targetDOMElement) {
         this.Grid = grid
         this.Algorithms = algorithms
         this.StepHistory = stepHistory
         this.DOMElementRoot = targetDOMElement
+        this.QueueHistory = queueHistory
 
         this.GPUDEVICE
         this.CANVASCONTEXTS = []
         this.CANVASFORMAT
-        this.DOMElementRoot = targetDOMElement
-        this.BACKGROUNDCOLOR = {r: 0.9, g: 0.9, b: 0.9, a: 1}
+        this.BACKGROUNDCOLOR = { r: 0.9, g: 0.9, b: 0.9, a: 1 }
         this.CELLCOLOR = `0.5, 0.5, 0.5, 1` //Red, Green, Blue, Alpha
         this.STATE = {
             EMPTY: 0,
@@ -28,28 +28,28 @@ class GPUDriver {
         this.textureAtlas
         this.sampler
         this.MATERIAL_MAP = [
-            {state: this.STATE.START, img: "emoji-sunglasses-fill"},
-            {state: this.STATE.TARGET, img: "door-closed"},
-            {state: this.STATE.OBSTACLE, img: "x-square"},
+            { state: this.STATE.START, img: "emoji-sunglasses-fill" },
+            { state: this.STATE.TARGET, img: "door-closed" },
+            { state: this.STATE.OBSTACLE, img: "x-square" },
         ]
         this.cellSize = 30
-        let canvaswidth = this.Grid.width * this.cellSize
+
+        // Caculate canvas size
+        this.canvaswidth = this.Grid.width * this.cellSize
         // Safe distance to right edge defaults to 20
-        let canvasDOMWidth = document.getElementById(targetDOMElement).offsetWidth - 10
+        let canvasDOMWidth = document.getElementById(this.DOMElementRoot).offsetWidth - 10
         // @TODO Add grid size limit to editor: webgpu default draw limit 8192 / smallest cell size 10 = 819 which is 670,761 cells
-        if (canvaswidth > canvasDOMWidth) {
-            console.log("shrinking scale...")
+        if (this.canvaswidth > canvasDOMWidth) {
             this.cellSize = Math.floor(canvasDOMWidth / this.Grid.width)
             // 10 is a reasonable size to still make out the icons,
             // on a 1080p display it shows 158 cells without introducing scrolling.
-            this.cellSize = this.cellSize < 10 ? 10: this.cellSize
-            canvaswidth = this.Grid.width * this.cellSize
-            console.log(`Grid width: ${this.Grid.width}, canvas width: ${canvasDOMWidth}, shrink to cell size: ${this.cellSize}`)
+            this.cellSize = this.cellSize < 10 ? 10 : this.cellSize
+            this.canvaswidth = this.Grid.width * this.cellSize
         }
-        let canvasheight = this.Grid.height * this.cellSize
+        this.canvasheight = this.Grid.height * this.cellSize
         this.CanvasSize = [
-            canvaswidth,
-            canvasheight,
+            this.canvaswidth,
+            this.canvasheight,
         ]
     }
 
@@ -157,7 +157,6 @@ class GPUDriver {
     }
 
     drawGrid() {
-        console.log("Using GPU render...")
         this.CELLSTATE = this.Grid.toCellState()
 
         // 1. Create arrays and format data for buffers
@@ -388,5 +387,9 @@ class GPUDriver {
                 return true
         }
         return false
+    }
+
+    getMousePosition(mouseX, mouseY) {
+        return [Math.floor(mouseX / this.cellSize), Math.floor(mouseY / this.cellSize)]
     }
 }
