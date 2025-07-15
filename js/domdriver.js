@@ -129,7 +129,7 @@ class DOMDriver {
             // Reverse
             if (!isForward) {
                 for (let step = startStep; step >= endStep; step--) {
-                    if (step >= algorithmSteps) continue
+                    if (step >= algorithmSteps) break
                     const cells = Object.values(history[step]).flat()
                     cells.forEach(([x, y]) => {
                         const index = y * this.Grid.width + x
@@ -143,7 +143,7 @@ class DOMDriver {
                 // Forward
             } else {
                 for (let step = startStep; step < endStep; step++) {
-                    if (step >= algorithmSteps) continue
+                    if (step >= algorithmSteps) break
                     const cells = Object.values(history[step]).flat()
                     cells.forEach(([x, y]) => {
                         const index = y * this.Grid.width + x

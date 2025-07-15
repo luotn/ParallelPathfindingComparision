@@ -7,18 +7,27 @@ class GPUDriver {
         this.QueueHistory = queueHistory
 
         this.GPUDEVICE
-        this.CANVASCONTEXTS = []
         this.CANVASFORMAT
-        this.BACKGROUNDCOLOR = { r: 0.9, g: 0.9, b: 0.9, a: 1 }
+        this.CellPipeline
+        this.CellVertexBuffer
+        this.BACKGROUNDCOLOR = {r: 0.9, g: 0.9, b: 0.9, a: 1}
         this.CELLCOLOR = `0.5, 0.5, 0.5, 1` //Red, Green, Blue, Alpha
         this.STATE = {
             EMPTY: 0,
             START: -1,
             TARGET: -2,
-            OBSTACLE: -3
+            OBSTACLE: -3,
+            PATH_UP: -4,
+            PATH_DOWN: -5,
+            PATH_LEFT: -6,
+            PATH_RIGHT: -7,
+            VISITED: -8,
+            TARGET_REACHED: -9,
+            IN_QUEUE: -10,
+            SEARCHING: -11,
         }
         // Visited Score: any value > 0
-        this.CELLSTATE
+        this.CELLSTATES = this.Grid.toCellState()
         // All texture used by gpu render have to be resized to a square with size TEXTURE_SIZE * TEXTURE_SIZE.
         this.TEXTURE_SIZE = 256
         // Use minimal webgpu requirement of 8192 x 8192
@@ -28,9 +37,17 @@ class GPUDriver {
         this.textureAtlas
         this.sampler
         this.MATERIAL_MAP = [
-            { state: this.STATE.START, img: "emoji-sunglasses-fill" },
-            { state: this.STATE.TARGET, img: "door-closed" },
-            { state: this.STATE.OBSTACLE, img: "x-square" },
+            {state: this.STATE.START, img: "emoji-sunglasses-fill"},
+            {state: this.STATE.TARGET, img: "door-closed"},
+            {state: this.STATE.OBSTACLE, img: "x-square"},
+            {state: this.STATE.PATH_UP, img: "arrow-up-square-fill"},
+            {state: this.STATE.PATH_DOWN, img: "arrow-down-square-fill"},
+            {state: this.STATE.PATH_LEFT, img: "arrow-left-square-fill"},
+            {state: this.STATE.PATH_RIGHT, img: "arrow-right-square-fill"},
+            {state: this.STATE.VISITED, img: "square-fill"},
+            {state: this.STATE.TARGET_REACHED, img: "door-open-fill"},
+            {state: this.STATE.IN_QUEUE, img: "square-fill"},
+            {state: this.STATE.SEARCHING, img: "square-fill-orange"},
         ]
         this.cellSize = 30
 
@@ -51,6 +68,9 @@ class GPUDriver {
             this.canvaswidth,
             this.canvasheight,
         ]
+        this.CANVASRESOURCES = {}
+        for (const algorithm of this.Algorithms)
+            this.CANVASRESOURCES[algorithm] = new CanvasResource(this.Grid.toCellState())
     }
 
     async init() {
@@ -70,7 +90,7 @@ class GPUDriver {
 
         // Save canvas contexts
         for (const algorithm of this.Algorithms)
-            this.CANVASCONTEXTS.push(document.getElementById(`${algorithm}-canvas`).getContext("webgpu"))
+            this.CANVASRESOURCES[algorithm].CANVASCONTEXT = document.getElementById(`${algorithm}-canvas`).getContext("webgpu")
 
         // Init gpu
         if (navigator.gpu) {
@@ -79,8 +99,8 @@ class GPUDriver {
                 this.GPUDEVICE = await adapter.requestDevice()
                 this.CANVASFORMAT = navigator.gpu.getPreferredCanvasFormat()
 
-                for (const canvas of this.CANVASCONTEXTS) {
-                    canvas.configure({
+                for (const algorithm of this.Algorithms) {
+                    this.CANVASRESOURCES[algorithm].CANVASCONTEXT.configure({
                         device: this.GPUDEVICE,
                         format: this.CANVASFORMAT,
                         alphaMode: 'premultiplied',
@@ -144,8 +164,8 @@ class GPUDriver {
 
         // Copy bitmap to texture buffer on gpu
         this.GPUDEVICE.queue.copyExternalImageToTexture(
-            { source: imageBitmap },
-            { texture: this.textureAtlas },
+            {source: imageBitmap},
+            {texture: this.textureAtlas},
             [textureCanvas.width, textureCanvas.height]
         )
 
@@ -157,8 +177,6 @@ class GPUDriver {
     }
 
     drawGrid() {
-        this.CELLSTATE = this.Grid.toCellState()
-
         // 1. Create arrays and format data for buffers
         const cellVertices = new Float32Array([
             // X,    Y,    U,   V
@@ -172,48 +190,6 @@ class GPUDriver {
         ])
 
         const cellPositionArray = new Float32Array([this.Grid.width, this.Grid.height])
-
-        // 2. Create buffers and buffer layouts
-        const cellVertexBuffer = this.GPUDEVICE.createBuffer({
-            label: "Cell vertices",
-            size: cellVertices.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        })
-
-        const cellVertexBufferLayout = {
-            arrayStride: 16, // 4 floats, 4 byte/float
-            attributes: [
-                {
-                    format: "float32x2",
-                    offset: 0,
-                    shaderLocation: 0 // position
-                },
-                {
-                    format: "float32x2",
-                    offset: 8,
-                    shaderLocation: 1 // Texture uv
-                }
-            ]
-        }
-
-        const cellPositionBuffer = this.GPUDEVICE.createBuffer({
-            label: "Grid Uniforms",
-            size: cellPositionArray.byteLength,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        })
-
-        const stateBuffer = this.GPUDEVICE.createBuffer({
-            label: "Cell states buffer",
-            size: this.CELLSTATE.byteLength,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-        })
-
-        // 3. Write to buffers
-        this.GPUDEVICE.queue.writeBuffer(cellVertexBuffer, 0, cellVertices)
-
-        this.GPUDEVICE.queue.writeBuffer(cellPositionBuffer, 0, cellPositionArray)
-
-        this.GPUDEVICE.queue.writeBuffer(stateBuffer, 0, this.CELLSTATE)
 
         // 4. Create shader module
         const cellShaderModule = this.GPUDEVICE.createShaderModule({
@@ -251,11 +227,18 @@ class GPUDriver {
         fn stateToAtlasUV(state: i32) -> vec2f {
             // Project state to uv positions
             var index = 0u;
-            if (state == ${this.STATE.START}) {index = 0u;}
-            else if (state == ${this.STATE.TARGET}) {index = 1u;}
-            else if (state == ${this.STATE.OBSTACLE}) {index = 2u;}
-            // Return invalid position if not using texture
-            else {return vec2f(-1);} 
+            if (state == ${this.STATE.START}) { index = 0u; }
+            else if (state == ${this.STATE.TARGET}) { index = 1u; }
+            else if (state == ${this.STATE.OBSTACLE}) { index = 2u; }
+            else if (state == ${this.STATE.PATH_UP}) { index = 3u; }
+            else if (state == ${this.STATE.PATH_DOWN}) { index = 4u; }
+            else if (state == ${this.STATE.PATH_LEFT}) { index = 5u; }
+            else if (state == ${this.STATE.PATH_RIGHT}) { index = 6u; }
+            else if (state == ${this.STATE.VISITED}) { index = 7u; }
+            else if (state == ${this.STATE.TARGET_REACHED}) { index = 8u; }
+            else if (state == ${this.STATE.IN_QUEUE}) { index = 9u; }
+            else if (state == ${this.STATE.SEARCHING}) { index = 10u; }
+            else { return vec2f(-1); }
             
             // Calculate texture position (range: 0 - 1)
             let atlasSize = vec2f(${this.TEXTURE_SIZE * this.ATLAS_COLS}.0, ${this.TEXTURE_SIZE * this.ATLAS_ROWS}.0);
@@ -299,8 +282,25 @@ class GPUDriver {
         `
         })
 
+        const cellVertexBufferLayout = {
+            arrayStride: 16, // 4 floats, 4 byte/float
+            attributes: [
+                {
+                    format: "float32x2",
+                    offset: 0,
+                    shaderLocation: 0 // position
+                },
+                {
+                    format: "float32x2",
+                    offset: 8,
+                    shaderLocation: 1 // Texture uv
+                }
+            ]
+        }
+
+
         // 5. Create pipeline
-        const cellPipeline = this.GPUDEVICE.createRenderPipeline({
+        this.CellPipeline = this.GPUDEVICE.createRenderPipeline({
             label: "Cell pipeline",
             layout: "auto",
             vertex: {
@@ -317,33 +317,68 @@ class GPUDriver {
             }
         })
 
-        // 6. Assign bind groups
-        const cellPosBindGroup = this.GPUDEVICE.createBindGroup({
-            label: "Cell renderer bind group",
-            layout: cellPipeline.getBindGroupLayout(0),
-            entries: [
-                { binding: 0, resource: { buffer: cellPositionBuffer } },
-                { binding: 1, resource: { buffer: stateBuffer } },
-                { binding: 2, resource: this.sampler },
-                { binding: 3, resource: this.textureAtlas.createView() }
-            ]
+        // 2. Create buffers and buffer layouts
+        // Vertex buffer
+        this.CellVertexBuffer = this.GPUDEVICE.createBuffer({
+            label: "Cell vertices",
+            size: cellVertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         })
 
+        this.GPUDEVICE.queue.writeBuffer(this.CellVertexBuffer, 0, cellVertices)
+
+
+        // Grid uniform buffer
+        const cellPositionBuffer = this.GPUDEVICE.createBuffer({
+            label: "Grid Uniforms",
+            size: cellPositionArray.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        })
+
+        this.GPUDEVICE.queue.writeBuffer(cellPositionBuffer, 0, cellPositionArray)
+
+
+
+        // Cell state buffers
+        for (const algorithm of this.Algorithms) {
+            this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER = this.GPUDEVICE.createBuffer({
+                label: `${algorithm} cell states buffer`,
+                size: this.CANVASRESOURCES[algorithm].CELLSTATE.byteLength,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            })
+            this.GPUDEVICE.queue.writeBuffer(this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER, 0, this.CANVASRESOURCES[algorithm].CELLSTATE)
+
+            this.CANVASRESOURCES[algorithm].BINDGROUP = this.GPUDEVICE.createBindGroup({
+                label: `${algorithm} cell renderer bind group`,
+                layout: this.CellPipeline.getBindGroupLayout(0),
+                entries: [
+                    {binding: 0, resource: {buffer: cellPositionBuffer}},
+                    {binding: 1, resource: {buffer: this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER}},
+                    {binding: 2, resource: this.sampler},
+                    {binding: 3, resource: this.textureAtlas.createView()}
+                ]
+            })
+        }
+
         // 7. Create encoder and set encoder parameters
+        this.renderGrid()
+    }
+
+    renderGrid() {
         const encoder = this.GPUDEVICE.createCommandEncoder()
-        for (const context of this.CANVASCONTEXTS) {
+        for (const algorithm of this.Algorithms) {
             const pass = encoder.beginRenderPass({
                 colorAttachments: [{
-                    view: context.getCurrentTexture().createView(),
+                    view: this.CANVASRESOURCES[algorithm].CANVASCONTEXT.getCurrentTexture().createView(),
                     loadOp: "clear",
                     clearValue: this.BACKGROUNDCOLOR,
                     storeOp: "store",
                 }]
             })
 
-            pass.setPipeline(cellPipeline)
-            pass.setVertexBuffer(0, cellVertexBuffer)
-            pass.setBindGroup(0, cellPosBindGroup)
+            pass.setPipeline(this.CellPipeline)
+            pass.setVertexBuffer(0, this.CellVertexBuffer)
+            pass.setBindGroup(0, this.CANVASRESOURCES[algorithm].BINDGROUP)
             pass.draw(6, this.Grid.width * this.Grid.height)
 
             pass.end()
@@ -353,15 +388,6 @@ class GPUDriver {
 
         // 8. Submit render command
         this.GPUDEVICE.queue.submit([commandBuffer])
-    }
-
-    updateCellState(index, newState) {
-        this.CELLSTATE[index] = newState;
-        this.GPUDEVICE.queue.writeBuffer(
-            stateBuffer,
-            index * Int32Array.BYTES_PER_ELEMENT,
-            new Int32Array([newState])
-        )
     }
 
     // @NOTE When directly calling createImageBitmap right after img.decode:
@@ -391,5 +417,114 @@ class GPUDriver {
 
     getMousePosition(mouseX, mouseY) {
         return [Math.floor(mouseX / this.cellSize), Math.floor(mouseY / this.cellSize)]
+    }
+
+    updateVisuals(currentStep, lastRenderedStep) {
+        this.updateCellState(currentStep, lastRenderedStep)
+
+        // Write cell states to cell state buffers
+        for (const algorithm of this.Algorithms) {
+            this.GPUDEVICE.queue.writeBuffer(
+                this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER,
+                0,
+                this.CANVASRESOURCES[algorithm].CELLSTATE
+            )
+        }
+
+        this.renderGrid()
+        return currentStep
+    }
+
+    updateCellState(currentStep, lastRenderedStep) {
+        for (const algorithm of this.Algorithms) {
+            const {history, steps, directions} = this.StepHistory[algorithm]
+            const algorithmSteps = history.length
+
+            // Show which cell is being searched and which cells are in the queue/stack
+            // searchingStep of -1 will skip the update
+            const searchingStep = currentStep <= algorithmSteps ? currentStep : -1
+            if (searchingStep != -1 && currentStep < algorithmSteps) {
+                // Reset cell state to initial state
+                this.CANVASRESOURCES[algorithm].CELLSTATE = this.Grid.toCellState()
+
+                // Calculate and update searching cell in cell state
+                const [searchingX, searchingY] = Object.keys(history[searchingStep])[0].split("-").map(function (item) {
+                    return parseInt(item)
+                })
+
+                // Calculate and update cells algorithm checked
+                let cells = []
+                for (let i = 0; i < searchingStep; i++) {
+                    cells.push(Object.values(history[i]).flat())
+                }
+                cells = cells.flat()
+                for (let i = 0; i < cells.length; i++) {
+                    this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(cells[i][0], cells[i][1])] = this.STATE.VISITED
+                }
+
+                if (this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(searchingX, searchingY)] != this.STATE.START)
+                    this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(searchingX, searchingY)] = this.STATE.SEARCHING
+            }
+
+            // Add path to cell state when:
+            // current step is higher than the steps algorithm took
+            // and the path is not already in cell state
+            if (currentStep >= algorithmSteps && lastRenderedStep < algorithmSteps) {
+                // Draw all searched steps
+                let cells = []
+                for (let i = 0; i < history.length; i++) {
+                    cells.push(Object.values(history[i]).flat())
+                }
+                cells = cells.flat()
+                for (let i = 0; i < cells.length; i++) {
+                    if (this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(cells[i][0], cells[i][1])] != this.STATE.TARGET)
+                        this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(cells[i][0], cells[i][1])] = this.STATE.VISITED
+                }
+
+                // Draw directions
+                const directionInCellState = this.directionsToCellState(directions)
+                for (let pathStep = 1; pathStep < steps.length; pathStep++) {
+                    let stepIndex = this.toCellStateIndex(steps[pathStep][0], steps[pathStep][1])
+                    if (this.CANVASRESOURCES[algorithm].CELLSTATE[stepIndex] != this.STATE.TARGET)
+                        this.CANVASRESOURCES[algorithm].CELLSTATE[stepIndex] = directionInCellState[pathStep]
+                    else
+                        this.CANVASRESOURCES[algorithm].CELLSTATE[stepIndex] = this.STATE.TARGET_REACHED
+                }
+            }
+        }
+    }
+
+    toCellStateIndex(x, y) {
+        return x + ((this.Grid.height - y - 1) * this.Grid.height)
+    }
+
+    directionsToCellState(directions) {
+        let result = []
+        directions.forEach(pathStepDirection => {
+            switch (pathStepDirection) {
+                case 'pathUp':
+                    result.push(this.STATE.PATH_UP)
+                    break
+                case 'pathDown':
+                    result.push(this.STATE.PATH_DOWN)
+                    break
+                case 'pathLeft':
+                    result.push(this.STATE.PATH_LEFT)
+                    break
+                case 'pathRight':
+                    result.push(this.STATE.PATH_RIGHT)
+                    break
+            }
+        })
+        return result
+    }
+}
+
+class CanvasResource {
+    constructor(initialCellState) {
+        this.CELLSTATE = initialCellState
+        this.CELLSTATEBUFFER
+        this.CANVASCONTEXT
+        this.BINDGROUP
     }
 }

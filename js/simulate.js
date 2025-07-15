@@ -283,6 +283,8 @@ function handleStepBack() {
     if (CurrentStep - 1 >= 0) {
         CurrentStep--
         updateEverything()
+    } else {
+        stopPlayback()
     }
 }
 
@@ -334,9 +336,9 @@ function runBenchmark() {
             }
 
             // Unit: μs
-            BenchmarkResult[algorithm] = { avgTime: Math.round(1.0 * (totalTime / BenchmarkTimes) * 1e3) }
+            BenchmarkResult[algorithm] = {avgTime: Math.round(1.0 * (totalTime / BenchmarkTimes) * 1e3)}
         } else {
-            BenchmarkResult[algorithm] = { avgTime: -1 }
+            BenchmarkResult[algorithm] = {avgTime: -1}
         }
     }
 }
@@ -345,7 +347,7 @@ function runAlgorithms() {
     // Run algorithm and save step history to stepHistory
     for (let algorithm of Algorithms) {
         // Prepare to run algorithm
-        StepHistory[algorithm] = { time: 0, steps: [], directions: [] }
+        StepHistory[algorithm] = {time: 0, steps: [], directions: []}
         let newGrid = cloneGrid(Grid)
 
         // RUN IT!
@@ -447,5 +449,5 @@ function decompressGrid(compressedStr) {
         data.push(state)
     }
 
-    return { "width": width, "height": height, "data": data }
+    return {"width": width, "height": height, "data": data}
 }
