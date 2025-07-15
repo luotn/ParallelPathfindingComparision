@@ -129,13 +129,12 @@ class DOMDriver {
             // Reverse
             if (!isForward) {
                 for (let step = startStep; step >= endStep; step--) {
-                    if (step >= algorithmSteps) break
+                    if (step >= algorithmSteps) continue
                     const cells = Object.values(history[step]).flat()
                     cells.forEach(([x, y]) => {
                         const index = y * this.Grid.width + x
                         if (this.CellReferences[algorithm][index].className !== "start" &&
-                            this.CellReferences[algorithm][index].className !== "target") 
-                        {
+                            this.CellReferences[algorithm][index].className !== "target") {
                             this.CellReferences[algorithm][index].className = "unvisited"
                         }
                     })
@@ -143,13 +142,12 @@ class DOMDriver {
                 // Forward
             } else {
                 for (let step = startStep; step < endStep; step++) {
-                    if (step >= algorithmSteps) break
+                    if (step >= algorithmSteps) continue
                     const cells = Object.values(history[step]).flat()
                     cells.forEach(([x, y]) => {
                         const index = y * this.Grid.width + x
                         if (this.CellReferences[algorithm][index].className !== "start" &&
-                            this.CellReferences[algorithm][index].className !== "target") 
-                        {
+                            this.CellReferences[algorithm][index].className !== "target") {
                             this.CellReferences[algorithm][index].className = "visited"
                         }
                     })
@@ -168,7 +166,6 @@ class DOMDriver {
                 this.drawPath(algorithm, true, currentStep)
             }
         }
-
         return currentStep
     }
 

@@ -283,8 +283,6 @@ function handleStepBack() {
     if (CurrentStep - 1 >= 0) {
         CurrentStep--
         updateEverything()
-    } else {
-        stopPlayback()
     }
 }
 
