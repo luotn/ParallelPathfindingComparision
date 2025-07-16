@@ -264,11 +264,13 @@ function stopPlayback() {
 function handleForward() {
     CurrentStep = MaxStep
     updateEverything()
+    stopPlayback()
 }
 
 function handleRewind() {
     CurrentStep = 0
     updateEverything()
+    stopPlayback()
 }
 
 function handleStepForward() {

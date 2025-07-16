@@ -23,7 +23,7 @@ class BFS {
         while (this.queue.length > 0) {
             // Hard copy queue to avoid further changes
             this.queueHistory[step] = Array.from(this.queue)
-            
+
             const current = this.queue.shift()
             const [currentX, currentY] = current
 

@@ -94,22 +94,26 @@
                             Select at least 1 algorithm
                         </a>
                     </li>
-                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Uses priority queue and Manhattan distance.">
+                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover"
+                        data-bs-content="Uses priority queue and Manhattan distance.">
                         <input class="form-check-input me-1" type="checkbox" value="" id="AStar"
                             onchange="changeAlgorithm('AStar')">
                         <label class="form-check-label" for="AStar">A* Search</label>
                     </li>
-                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Uses priority queue and tentative distance.">
+                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover"
+                        data-bs-content="Uses priority queue and tentative distance.">
                         <input class="form-check-input me-1" type="checkbox" value="" id="Dijkstra"
                             onchange="changeAlgorithm('Dijkstra')">
                         <label class="form-check-label" for="Dijkstra">Dijkstra's Algorithm</label>
                     </li>
-                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Search all nodes at the present depth first.">
+                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover"
+                        data-bs-content="Search all nodes at the present depth first.">
                         <input class="form-check-input me-1" type="checkbox" value="" id="BFS"
                             onchange="changeAlgorithm('BFS')">
                         <label class="form-check-label" for="BFS">Breadth-first Search (BFS)</label>
                     </li>
-                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Search all nodes with the largest depth first.">
+                    <li class="list-group-item" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover"
+                        data-bs-content="Search all nodes with the largest depth first.">
                         <input class="form-check-input me-1" type="checkbox" value="" id="DFS"
                             onchange="changeAlgorithm('DFS')">
                         <label class="form-check-label" for="DFS">Depth-first Search (DFS)</label>
@@ -132,7 +136,8 @@
 
     <!-- Position viewer -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div id="positionViewer" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+        <div id="positionViewer" class="toast" role="alert" aria-live="assertive" aria-atomic="true"
+            data-bs-autohide="false">
             <div class="toast-body" id="positionText">
                 [0, 0]
             </div>

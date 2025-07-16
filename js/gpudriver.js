@@ -255,7 +255,7 @@ class GPUDriver {
             this.GPUDEVICE.queue.writeBuffer(this.CANVASRESOURCES[algorithm].SCOREBUFFER, 0, this.CANVASRESOURCES[algorithm].SCORE)
         }
 
-        // 4. Create shader module
+        // 3. Create shader module
         const cellShaderModule = this.GPUDEVICE.createShaderModule({
             label: "Cell shader",
             code: `
@@ -348,7 +348,7 @@ class GPUDriver {
                     // Draw score
                     if (state == ${this.STATE.IN_QUEUE} || state == ${this.STATE.SEARCHING}) {
                         let score = scores[input.instanceIndex];
-                        // 1. 计算有效位数 (跳过前导零)
+                        // 1. Calculate number of digits
                         var numDigits = 1;
                         var temp = score;
                         if (temp > 0) {
@@ -359,29 +359,29 @@ class GPUDriver {
                             }
                         }
                         
-                        // 2. 计算当前片段所属的数字位（从左到右）
+                        // 2. Calculate digit of current fragment
                         let digitWidth = 1.0 / f32(numDigits);
                         var digitIndex = i32(floor(input.texCoord.x / digitWidth));
                         digitIndex = clamp(digitIndex, 0, numDigits - 1);
                         
-                        // 3. 计算实际位序（从左=最高位，右=最低位）
+                        // 3. Caculate actual digit order (from left/high to right/low)
                         let digitPos = numDigits - 1 - digitIndex;
                         
-                        // 4. 获取对应位的数字（使用整数计算）
+                        // 4. Get digit of this position
                         var power = 1;
                         for (var i = 0; i < digitPos; i++) {
                             power *= 10;
                         }
                         let digit = (score / power) % 10;
                         
-                        // 5. 计算当前位内的局部UV
+                        // 5. Calculate the internal UV of current digit
                         let segmentStart = f32(digitIndex) * digitWidth;
                         let localX = (input.texCoord.x - segmentStart) / digitWidth;
                         
-                        // 6. 获取数字纹理坐标
+                        // 6. Get the texture uv of digit
                         let digitUV = drawDigit(digit);
                         
-                        // 7. 调整纹理采样坐标
+                        // 7. Mix background color with digit color
                         let digitIconUV = vec2f(
                             digitUV.x + localX / ${this.ATLAS_COLS}.0,
                             digitUV.y + (1.0 - input.texCoord.y) / ${this.ATLAS_ROWS}.0
@@ -405,7 +405,7 @@ class GPUDriver {
             `
         })
 
-        // 5. Create pipeline
+        // 4. Create pipeline
         this.CellPipeline = this.GPUDEVICE.createRenderPipeline({
             label: "Cell pipeline",
             layout: "auto",
@@ -423,6 +423,7 @@ class GPUDriver {
             }
         })
 
+        // 5. Create bind groups
         for (const algorithm of this.Algorithms) {
             this.CANVASRESOURCES[algorithm].BINDGROUP = this.GPUDEVICE.createBindGroup({
                 label: `${algorithm} cell renderer bind group`,
@@ -437,9 +438,7 @@ class GPUDriver {
             })
         }
 
-
-
-        // 7. Create encoder and set encoder parameters
+        // 7. Create and set encoder then submit encoder to draw
         this.renderGrid()
     }
 
@@ -465,7 +464,6 @@ class GPUDriver {
 
         const commandBuffer = encoder.finish()
 
-        // 8. Submit render command
         this.GPUDEVICE.queue.submit([commandBuffer])
     }
 
