@@ -14,20 +14,19 @@ class GPUDriver {
         this.CELLCOLOR = `0.5, 0.5, 0.5, 1` //Red, Green, Blue, Alpha
         this.STATE = {
             EMPTY: 0,
-            START: -1,
-            TARGET: -2,
-            OBSTACLE: -3,
-            PATH_UP: -4,
-            PATH_DOWN: -5,
-            PATH_LEFT: -6,
-            PATH_RIGHT: -7,
-            VISITED: -8,
-            TARGET_REACHED: -9,
-            IN_QUEUE: -10,
-            SEARCHING: -11,
+            START: 1,
+            TARGET: 2,
+            OBSTACLE: 3,
+            PATH_UP: 4,
+            PATH_DOWN: 5,
+            PATH_LEFT: 6,
+            PATH_RIGHT: 7,
+            VISITED: 8,
+            TARGET_REACHED: 9,
+            IN_QUEUE: 10,
+            SEARCHING: 11,
         }
-        // Visited Score: any value > 0
-        this.CELLSTATES = this.Grid.toCellState()
+        this.CELLSTATES = this.Grid.toCellState(this.STATE)
         // All texture used by gpu render have to be resized to a square with size TEXTURE_SIZE * TEXTURE_SIZE.
         this.TEXTURE_SIZE = 256
         // Use minimal webgpu requirement of 8192 x 8192
@@ -70,7 +69,7 @@ class GPUDriver {
         ]
         this.CANVASRESOURCES = {}
         for (const algorithm of this.Algorithms)
-            this.CANVASRESOURCES[algorithm] = new CanvasResource(this.Grid.toCellState())
+            this.CANVASRESOURCES[algorithm] = new CanvasResource(this.Grid.toCellState(this.STATE))
     }
 
     async init() {
@@ -445,7 +444,7 @@ class GPUDriver {
             const searchingStep = currentStep <= algorithmSteps ? currentStep : -1
             if (searchingStep != -1 && currentStep < algorithmSteps) {
                 // Reset cell state to initial state
-                this.CANVASRESOURCES[algorithm].CELLSTATE = this.Grid.toCellState()
+                this.CANVASRESOURCES[algorithm].CELLSTATE = this.Grid.toCellState(this.STATE)
 
                 // Calculate and update searching cell in cell state
                 const [searchingX, searchingY] = Object.keys(history[searchingStep])[0].split("-").map(function (item) {

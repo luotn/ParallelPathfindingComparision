@@ -123,29 +123,29 @@ class GRID {
         console.log(result)
     }
 
-    toCellState() {
+    toCellState(state) {
         let result = []
         // Reverse rows for gpu
         for(let y = this.height - 1; y >= 0 ; y--) {
             for(let x = 0; x < this.width; x++) {
                 switch (this.data[this.width * y + x]) {
                     case "unvisited":
-                        result.push(0)
+                        result.push(state.EMPTY)
                         break
                     case "visited":
-                        result.push(0)
+                        result.push(state.EMPTY)
                         break
                     case "start":
-                        result.push(-1)
+                        result.push(state.START)
                         break
                     case "target":
-                        result.push(-2)
+                        result.push(state.TARGET)
                         break
                     case "wall":
-                        result.push(-3)
+                        result.push(state.OBSTACLE)
                         break
                     default:
-                        result.push(-10)
+                        result.push(-1)
                 }
             }
         }
