@@ -47,6 +47,16 @@ class GPUDriver {
             {state: this.STATE.TARGET_REACHED, img: "door-open-fill"},
             {state: this.STATE.IN_QUEUE, img: "square-fill"},
             {state: this.STATE.SEARCHING, img: "square-fill-orange"},
+            {state: 0, img: "0"},
+            {state: 1, img: "1"},
+            {state: 2, img: "2"},
+            {state: 3, img: "3"},
+            {state: 4, img: "4"},
+            {state: 5, img: "5"},
+            {state: 6, img: "6"},
+            {state: 7, img: "7"},
+            {state: 8, img: "8"},
+            {state: 9, img: "9"},
         ]
         this.cellSize = 30
 
@@ -190,97 +200,6 @@ class GPUDriver {
 
         const cellPositionArray = new Float32Array([this.Grid.width, this.Grid.height])
 
-        // 4. Create shader module
-        const cellShaderModule = this.GPUDEVICE.createShaderModule({
-            label: "Cell shader",
-            code: `
-        @group(0) @binding(0) var<uniform> grid: vec2f;
-        @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
-        @group(0) @binding(2) var texSampler: sampler;
-        @group(0) @binding(3) var textureAtlas: texture_2d<f32>;
-        
-        struct VertexOutput {
-            @builtin(position) position: vec4f,
-            @location(0) @interpolate(flat) instanceIndex: u32,
-            @location(1) texCoord: vec2f
-        }
-        
-        @vertex
-        fn vertexMain(
-            @location(0) pos: vec2f,
-            @location(1) uv: vec2f,
-            @builtin(instance_index) instance: u32
-        ) -> VertexOutput {
-            let i = f32(instance);
-            let cell = vec2f(i % grid.x, floor(i / grid.x));
-            let cellOffset = cell / grid * 2;
-            let gridPos = (pos + 1) / grid - 1 + cellOffset;
-            
-            var output: VertexOutput;
-            output.position = vec4f(gridPos, 0, 1);
-            output.instanceIndex = instance;
-            output.texCoord = uv;
-            return output;
-        }
-        
-        fn stateToAtlasUV(state: i32) -> vec2f {
-            // Project state to uv positions
-            var index = 0u;
-            if (state == ${this.STATE.START}) { index = 0u; }
-            else if (state == ${this.STATE.TARGET}) { index = 1u; }
-            else if (state == ${this.STATE.OBSTACLE}) { index = 2u; }
-            else if (state == ${this.STATE.PATH_UP}) { index = 3u; }
-            else if (state == ${this.STATE.PATH_DOWN}) { index = 4u; }
-            else if (state == ${this.STATE.PATH_LEFT}) { index = 5u; }
-            else if (state == ${this.STATE.PATH_RIGHT}) { index = 6u; }
-            else if (state == ${this.STATE.VISITED}) { index = 7u; }
-            else if (state == ${this.STATE.TARGET_REACHED}) { index = 8u; }
-            else if (state == ${this.STATE.IN_QUEUE}) { index = 9u; }
-            else if (state == ${this.STATE.SEARCHING}) { index = 10u; }
-            else { return vec2f(-1); }
-            
-            // Calculate texture position (range: 0 - 1)
-            let atlasSize = vec2f(${this.TEXTURE_SIZE * this.ATLAS_COLS}.0, ${this.TEXTURE_SIZE * this.ATLAS_ROWS}.0);
-            let iconSize = vec2f(${this.TEXTURE_SIZE}.0);
-            
-            let col = index % ${this.ATLAS_COLS}u;
-            let row = index / ${this.ATLAS_COLS}u;
-            
-            let uvOffset = vec2f(f32(col) * iconSize.x / atlasSize.x,
-                                f32(row) * iconSize.y / atlasSize.y);
-            
-            return uvOffset;
-        }
-        
-        @fragment
-        fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-            let state = cellStates[input.instanceIndex];
-            
-            // Use texture if cell in special state, not empty
-            let atlasUV = stateToAtlasUV(state);
-            
-            // Always sample texture, ignore result if empty
-            let iconUV = vec2f(
-                atlasUV.x + input.texCoord.x / ${this.ATLAS_COLS}.0,
-                atlasUV.y + (1.0 - input.texCoord.y) / ${this.ATLAS_ROWS}.0
-            );
-            let sampledColor = textureSample(textureAtlas, texSampler, iconUV);
-            
-            if (atlasUV.x >= 0.0) {
-                return sampledColor;
-            }
-            
-            // Use full color if empty
-            if (state == ${this.STATE.EMPTY}) {
-                return vec4f(0.5, 0.5, 0.5, 1.0);
-            }
-            
-            // Use purple as fallback
-            return vec4f(0.5, 0.0, 0.5, 1.0);
-        }
-        `
-        })
-
         const cellVertexBufferLayout = {
             arrayStride: 16, // 4 floats, 4 byte/float
             attributes: [
@@ -296,25 +215,6 @@ class GPUDriver {
                 }
             ]
         }
-
-
-        // 5. Create pipeline
-        this.CellPipeline = this.GPUDEVICE.createRenderPipeline({
-            label: "Cell pipeline",
-            layout: "auto",
-            vertex: {
-                module: cellShaderModule,
-                entryPoint: "vertexMain",
-                buffers: [cellVertexBufferLayout]
-            },
-            fragment: {
-                module: cellShaderModule,
-                entryPoint: "fragmentMain",
-                targets: [{
-                    format: this.CANVASFORMAT
-                }]
-            }
-        })
 
         // 2. Create buffers and buffer layouts
         // Vertex buffer
@@ -336,9 +236,7 @@ class GPUDriver {
 
         this.GPUDEVICE.queue.writeBuffer(cellPositionBuffer, 0, cellPositionArray)
 
-
-
-        // Cell state buffers
+        // Cell state buffers and score buffers
         for (const algorithm of this.Algorithms) {
             this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER = this.GPUDEVICE.createBuffer({
                 label: `${algorithm} cell states buffer`,
@@ -347,6 +245,159 @@ class GPUDriver {
             })
             this.GPUDEVICE.queue.writeBuffer(this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER, 0, this.CANVASRESOURCES[algorithm].CELLSTATE)
 
+            this.CANVASRESOURCES[algorithm].SCOREBUFFER = this.GPUDEVICE.createBuffer({
+                label: `${algorithm} score buffer`,
+                size: this.CANVASRESOURCES[algorithm].SCORE.byteLength,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            })
+            this.GPUDEVICE.queue.writeBuffer(this.CANVASRESOURCES[algorithm].SCOREBUFFER, 0, this.CANVASRESOURCES[algorithm].SCORE)
+        }
+
+        // 4. Create shader module
+        const cellShaderModule = this.GPUDEVICE.createShaderModule({
+            label: "Cell shader",
+            code: `
+                @group(0) @binding(0) var<uniform> grid: vec2f;
+                @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
+                @group(0) @binding(2) var texSampler: sampler;
+                @group(0) @binding(3) var textureAtlas: texture_2d<f32>;
+                @group(0) @binding(4) var<storage, read> scores: array<i32>;
+                
+                struct VertexOutput {
+                    @builtin(position) position: vec4f,
+                    @location(0) @interpolate(flat) instanceIndex: u32,
+                    @location(1) texCoord: vec2f
+                }
+                
+                @vertex
+                fn vertexMain(
+                    @location(0) pos: vec2f,
+                    @location(1) uv: vec2f,
+                    @builtin(instance_index) instance: u32
+                ) -> VertexOutput {
+                    let i = f32(instance);
+                    let cell = vec2f(i % grid.x, floor(i / grid.x));
+                    let cellOffset = cell / grid * 2;
+                    let gridPos = (pos + 1) / grid - 1 + cellOffset;
+                    
+                    var output: VertexOutput;
+                    output.position = vec4f(gridPos, 0, 1);
+                    output.instanceIndex = instance;
+                    output.texCoord = uv;
+                    return output;
+                }
+                
+                fn stateToAtlasUV(state: i32) -> vec2f {
+                    // Project state to uv positions
+                    var index = 0u;
+                    if (state == ${this.STATE.START}) {index = 0u;}
+                    else if (state == ${this.STATE.TARGET}) {index = 1u;}
+                    else if (state == ${this.STATE.OBSTACLE}) {index = 2u;}
+                    else if (state == ${this.STATE.PATH_UP}) {index = 3u;}
+                    else if (state == ${this.STATE.PATH_DOWN}) {index = 4u;}
+                    else if (state == ${this.STATE.PATH_LEFT}) {index = 5u;}
+                    else if (state == ${this.STATE.PATH_RIGHT}) {index = 6u;}
+                    else if (state == ${this.STATE.VISITED}) {index = 7u;}
+                    else if (state == ${this.STATE.TARGET_REACHED}) {index = 8u;}
+                    else if (state == ${this.STATE.IN_QUEUE}) {index = 9u;}
+                    else if (state == ${this.STATE.SEARCHING}) {index = 10u;}
+                    else {return vec2f(-1);}
+                    
+                    // Calculate texture position (range: 0 - 1)
+                    let atlasSize = vec2f(${this.TEXTURE_SIZE * this.ATLAS_COLS}.0, ${this.TEXTURE_SIZE * this.ATLAS_ROWS}.0);
+                    let iconSize = vec2f(${this.TEXTURE_SIZE}.0);
+                    
+                    let col = index % ${this.ATLAS_COLS}u;
+                    let row = index / ${this.ATLAS_COLS}u;
+                    
+                    // UV offest
+                    return vec2f(f32(col) * iconSize.x / atlasSize.x, f32(row) * iconSize.y / atlasSize.y);
+                }
+
+                fn drawDigit(digit: i32) -> vec2f {
+                    if (digit < 0 || digit > 9) {return vec2f(-1);}
+                    
+                    // Calculate digit texture position in atlas
+                    let digitIndex = 11u + u32(digit);
+                    // Calculate texture position
+                    let atlasSize = vec2f(${this.TEXTURE_SIZE * this.ATLAS_COLS}.0, ${this.TEXTURE_SIZE * this.ATLAS_ROWS}.0);
+                    let iconSize = vec2f(${this.TEXTURE_SIZE}.0);
+                    
+                    let col = digitIndex % ${this.ATLAS_COLS}u;
+                    let row = digitIndex / ${this.ATLAS_COLS}u;
+                    
+                    return vec2f(f32(col) * iconSize.x / atlasSize.x, f32(row) * iconSize.y / atlasSize.y);
+                    }
+                
+                @fragment
+                fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
+                    let state = cellStates[input.instanceIndex];
+                    
+                    // Use texture if cell in special state, not empty
+                    let atlasUV = stateToAtlasUV(state);
+                    
+                    // Always sample texture, ignore result if empty
+                    let iconUV = vec2f(
+                        atlasUV.x + input.texCoord.x / ${this.ATLAS_COLS}.0,
+                        atlasUV.y + (1.0 - input.texCoord.y) / ${this.ATLAS_ROWS}.0
+                    );
+                    let sampledColor = textureSample(textureAtlas, texSampler, iconUV);
+
+                    // Draw score
+                    if (state == ${this.STATE.IN_QUEUE} || state == ${this.STATE.SEARCHING}) {
+                        let score = scores[input.instanceIndex];
+                        if (score >= 0) {
+                            var digits: array<i32, 6>;
+                            var temp = score;
+                            for (var i = 0; i < 5; i++) {
+                                digits[i] = temp % 10;
+                                temp = temp / 10;
+                            }
+
+                            let digitUV = drawDigit(digits[0]);
+                            let digitIconUV = vec2f(
+                                digitUV.x + input.texCoord.x / ${this.ATLAS_COLS}.0,
+                                digitUV.y + (1.0 - input.texCoord.y) / ${this.ATLAS_ROWS}.0
+                            );
+                            let digitColor = textureSampleLevel(textureAtlas, texSampler, digitIconUV, 0.0);
+                            return mix(sampledColor, digitColor, digitColor.a);
+                        }
+                    }
+
+                    if (atlasUV.x >= 0.0) {
+                        return sampledColor;
+                    }
+                    
+                    // Use full color if empty
+                    if (state == ${this.STATE.EMPTY}) {
+                        return vec4f(0.5, 0.5, 0.5, 1.0);
+                    }
+                    
+                    // Use purple as fallback
+                    return vec4f(0.5, 0.0, 0.5, 1.0);
+                }
+            `
+        })
+
+        // 5. Create pipeline
+        this.CellPipeline = this.GPUDEVICE.createRenderPipeline({
+            label: "Cell pipeline",
+            layout: "auto",
+            vertex: {
+                module: cellShaderModule,
+                entryPoint: "vertexMain",
+                buffers: [cellVertexBufferLayout]
+            },
+            fragment: {
+                module: cellShaderModule,
+                entryPoint: "fragmentMain",
+                targets: [{
+                    format: this.CANVASFORMAT
+                }]
+            }
+        })
+
+        for (const algorithm of this.Algorithms) {
             this.CANVASRESOURCES[algorithm].BINDGROUP = this.GPUDEVICE.createBindGroup({
                 label: `${algorithm} cell renderer bind group`,
                 layout: this.CellPipeline.getBindGroupLayout(0),
@@ -354,10 +405,13 @@ class GPUDriver {
                     {binding: 0, resource: {buffer: cellPositionBuffer}},
                     {binding: 1, resource: {buffer: this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER}},
                     {binding: 2, resource: this.sampler},
-                    {binding: 3, resource: this.textureAtlas.createView()}
+                    {binding: 3, resource: this.textureAtlas.createView()},
+                    {binding: 4, resource: {buffer: this.CANVASRESOURCES[algorithm].SCOREBUFFER}}
                 ]
             })
         }
+
+
 
         // 7. Create encoder and set encoder parameters
         this.renderGrid()
@@ -396,11 +450,9 @@ class GPUDriver {
         img.src = url
         await img.decode()
 
-        // 创建临时 Canvas 并缩放图像到目标尺寸
         const canvas = new OffscreenCanvas(this.TEXTURE_SIZE, this.TEXTURE_SIZE)
         const ctx = canvas.getContext('2d')
 
-        // 缩放绘制图像到目标尺寸
         ctx.drawImage(img, 0, 0, this.TEXTURE_SIZE, this.TEXTURE_SIZE)
 
         return await createImageBitmap(canvas)
@@ -427,6 +479,12 @@ class GPUDriver {
                 this.CANVASRESOURCES[algorithm].CELLSTATEBUFFER,
                 0,
                 this.CANVASRESOURCES[algorithm].CELLSTATE
+            )
+
+            this.GPUDEVICE.queue.writeBuffer(
+                this.CANVASRESOURCES[algorithm].SCOREBUFFER,
+                0,
+                this.CANVASRESOURCES[algorithm].SCORE
             )
         }
 
@@ -461,6 +519,34 @@ class GPUDriver {
                     this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(cells[i][0], cells[i][1])] = this.STATE.VISITED
                 }
 
+                // Update score
+                // Reset score stored
+                this.CANVASRESOURCES[algorithm].SCORE = new Int32Array(this.Grid.data.length).fill(-1)
+
+                const currentStepQueue = this.QueueHistory[algorithm][searchingStep]
+                const formattedCurrentStepQueue = []
+
+                // Queue might be array or objects, convert array into objects and rename different markings to score
+                if (Array.isArray(currentStepQueue[0])) {
+                    currentStepQueue.forEach(queueItem => {
+                        formattedCurrentStepQueue.push({pos: queueItem, score: 0})
+                    })
+                } else {
+                    const scoreKey = Object.keys(currentStepQueue[0])[1]
+                    currentStepQueue.forEach(queueItem => {
+                        formattedCurrentStepQueue.push({pos: queueItem.pos, score: queueItem[scoreKey]})
+                    })
+                }
+
+                // Update score and cell state
+                formattedCurrentStepQueue.forEach(queueCell => {
+                    const [x, y] = queueCell.pos
+                    const index = this.toCellStateIndex(x, y)
+                    this.CANVASRESOURCES[algorithm].SCORE[index] = queueCell.score
+                    if (this.CANVASRESOURCES[algorithm].CELLSTATE[index] != this.STATE.START)
+                        this.CANVASRESOURCES[algorithm].CELLSTATE[index] = this.STATE.IN_QUEUE
+                })
+
                 if (this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(searchingX, searchingY)] != this.STATE.START)
                     this.CANVASRESOURCES[algorithm].CELLSTATE[this.toCellStateIndex(searchingX, searchingY)] = this.STATE.SEARCHING
             }
@@ -469,7 +555,7 @@ class GPUDriver {
             // current step is higher than the steps algorithm took
             // and the path is not already in cell state
             if (currentStep >= algorithmSteps && lastRenderedStep < algorithmSteps) {
-                // Draw all searched steps
+                // Draw all visited cells
                 let cells = []
                 for (let i = 0; i < history.length; i++) {
                     cells.push(Object.values(history[i]).flat())
@@ -525,5 +611,7 @@ class CanvasResource {
         this.CELLSTATEBUFFER
         this.CANVASCONTEXT
         this.BINDGROUP
+        this.SCORE = new Int32Array(initialCellState.length).fill(-1)
+        this.SCOREBUFFER
     }
 }
