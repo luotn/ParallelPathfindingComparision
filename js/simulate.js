@@ -248,7 +248,8 @@ function startPlayback() {
     document.getElementById("playBackIcon").setAttribute("onclick", "stopPlayback()")
     document.getElementById("playBackText").innerHTML = `Pause(Q)`
     if (!PlayBackID) {
-        PlayBackID = setInterval(handleStepForward(), 1000 * Speed)
+        PlayBackID = setInterval(handleStepForward, 1000 * Speed)
+        console.log(PlayBackID)
     }
 }
 
