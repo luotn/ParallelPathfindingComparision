@@ -181,7 +181,9 @@ class GPUDriver {
         // Create sampler
         this.sampler = this.GPUDEVICE.createSampler({
             magFilter: 'linear',
-            minFilter: 'linear'
+            minFilter: 'linear',
+            addressModeU: 'clamp-to-edge',
+            addressModeV: 'clamp-to-edge',
         })
     }
 
@@ -346,22 +348,46 @@ class GPUDriver {
                     // Draw score
                     if (state == ${this.STATE.IN_QUEUE} || state == ${this.STATE.SEARCHING}) {
                         let score = scores[input.instanceIndex];
-                        if (score >= 0) {
-                            var digits: array<i32, 6>;
-                            var temp = score;
-                            for (var i = 0; i < 5; i++) {
-                                digits[i] = temp % 10;
-                                temp = temp / 10;
+                        // 1. 计算有效位数 (跳过前导零)
+                        var numDigits = 1;
+                        var temp = score;
+                        if (temp > 0) {
+                            numDigits = 0;
+                            while (temp > 0) {
+                                numDigits += 1;
+                                temp /= 10;
                             }
-
-                            let digitUV = drawDigit(digits[0]);
-                            let digitIconUV = vec2f(
-                                digitUV.x + input.texCoord.x / ${this.ATLAS_COLS}.0,
-                                digitUV.y + (1.0 - input.texCoord.y) / ${this.ATLAS_ROWS}.0
-                            );
-                            let digitColor = textureSampleLevel(textureAtlas, texSampler, digitIconUV, 0.0);
-                            return mix(sampledColor, digitColor, digitColor.a);
                         }
+                        
+                        // 2. 计算当前片段所属的数字位（从左到右）
+                        let digitWidth = 1.0 / f32(numDigits);
+                        var digitIndex = i32(floor(input.texCoord.x / digitWidth));
+                        digitIndex = clamp(digitIndex, 0, numDigits - 1);
+                        
+                        // 3. 计算实际位序（从左=最高位，右=最低位）
+                        let digitPos = numDigits - 1 - digitIndex;
+                        
+                        // 4. 获取对应位的数字（使用整数计算）
+                        var power = 1;
+                        for (var i = 0; i < digitPos; i++) {
+                            power *= 10;
+                        }
+                        let digit = (score / power) % 10;
+                        
+                        // 5. 计算当前位内的局部UV
+                        let segmentStart = f32(digitIndex) * digitWidth;
+                        let localX = (input.texCoord.x - segmentStart) / digitWidth;
+                        
+                        // 6. 获取数字纹理坐标
+                        let digitUV = drawDigit(digit);
+                        
+                        // 7. 调整纹理采样坐标
+                        let digitIconUV = vec2f(
+                            digitUV.x + localX / ${this.ATLAS_COLS}.0,
+                            digitUV.y + (1.0 - input.texCoord.y) / ${this.ATLAS_ROWS}.0
+                        );
+                        let digitColor = textureSampleLevel(textureAtlas, texSampler, digitIconUV, 0.0);
+                        return mix(sampledColor, digitColor, digitColor.a);
                     }
 
                     if (atlasUV.x >= 0.0) {

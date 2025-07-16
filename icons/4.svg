@@ -1,7 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="256px" height="256px" viewBox="0 0 256 256" version="1.1">
-<g id="surface1">
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(100%,100%,100%);fill-opacity:1;" d="M 120.304688 80.910156 C 123.824219 75.296875 127.328125 69.664062 130.816406 64.03125 L 161.742188 64.03125 L 161.742188 149.34375 L 177.871094 149.34375 L 177.871094 167.054688 L 161.761719 167.054688 L 161.761719 192 L 141.601562 192 L 141.601562 167.054688 L 79.648438 167.054688 L 79.648438 149.152344 C 91.96875 126.320312 106.144531 103.601562 120.320312 80.910156 Z M 120.304688 80.910156 "/>
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 99.601562 148.496094 L 99.601562 149.34375 L 141.601562 149.34375 L 141.601562 81.007812 L 140.558594 81.007812 C 126.6875 102.289062 111.96875 125.902344 99.601562 148.496094 "/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+
+<text style="fill: rgb(255, 255, 255); font-family: Arial, sans-serif; font-size: 200px; white-space: pre;" x="70" y="200">4</text>
+
 </svg>

@@ -1,7 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="256px" height="256px" viewBox="0 0 256 256" version="1.1">
-<g id="surface1">
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(100%,100%,100%);fill-opacity:1;" d="M 127.808594 194.527344 C 98.191406 194.527344 80.753906 169.40625 80.753906 130.6875 L 80.753906 125.441406 C 80.753906 86.910156 98.367188 61.503906 128.191406 61.503906 C 157.902344 61.503906 175.152344 86.625 175.152344 125.441406 L 175.152344 130.6875 C 175.152344 169.214844 157.535156 194.527344 127.808594 194.527344 "/>
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 128 79.214844 C 111.871094 79.214844 101.9375 96.65625 101.9375 125.535156 L 101.9375 130.496094 C 101.9375 159.457031 111.96875 176.816406 128 176.816406 C 144.03125 176.816406 153.96875 159.375 153.96875 130.496094 L 153.96875 125.535156 C 153.96875 96.734375 144.03125 79.214844 128 79.214844 "/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+
+<text style="fill: rgb(255, 255, 255); font-family: Arial, sans-serif; font-size: 200px; white-space: pre;" x="70" y="200">0</text>
+
 </svg>
