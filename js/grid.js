@@ -11,6 +11,7 @@ class GRID {
         this.visitHistory = {}
     }
 
+    // Update and return the target position
     getTargetPos() {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
@@ -23,6 +24,7 @@ class GRID {
         }
     }
 
+    // Update and return the start position
     getStartPos() {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
@@ -35,14 +37,17 @@ class GRID {
         }
     }
 
+    // Set cell state for a cell
     setCell(pos, value) {
         this.data[pos[1] * this.width + pos[0]] = value
     }
 
+    // Get state of a cell
     getCell(pos) {
         return this.data[pos[1] * this.width + pos[0]]
     }
 
+    // Get cell state and position of a cell in the direction adjecent to pos
     getCellAt(pos, direction) {
         let col = pos[0]
         let row = pos[1]
@@ -78,10 +83,12 @@ class GRID {
         return [cellState, nextPos]
     }
 
+    // Check if requested pos is out of grid bounds
     isOutOfBounds(pos) {
         return pos[0] < 0 || pos[0] > this.width || pos[1] < 0 || pos[1] > this.height
     }
 
+    // Taxicab/Manhattan distance
     taxiCabDistanceToTarget(pos) {
         return Math.abs(pos[0] - this.target[0]) + Math.abs(pos[1] - this.target[1]) - 1
     }
@@ -123,6 +130,7 @@ class GRID {
         console.log(result)
     }
 
+    // Convert a string-based data into Int32Array for WebGPU
     toCellState(state) {
         let result = []
         // Reverse rows for gpu

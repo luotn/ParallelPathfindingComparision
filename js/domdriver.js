@@ -169,6 +169,7 @@ class DOMDriver {
         return currentStep
     }
 
+    // Draw algorithm proposed path
     drawPath(algorithm, draw, currentStep) {
         const {steps, directions} = this.StepHistory[algorithm]
         for (let pathStep = 1; pathStep < this.StepHistory[algorithm].steps.length; pathStep++) {

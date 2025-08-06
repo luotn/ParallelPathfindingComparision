@@ -52,29 +52,29 @@ async function init() {
                 switch (keyValuePair[0]) {
                     case "g":
                         gridString = JSON.stringify(decompressGrid(decodeURI(keyValuePair[1])))
-                        sessionStorage.setItem("grid", gridString)
+                        localStorage.setItem("grid", gridString)
                         break
                     case "a":
                         algorithmString = decodeURI(keyValuePair[1])
-                        sessionStorage.setItem("algorithms", algorithmString)
+                        localStorage.setItem("algorithms", algorithmString)
                         break
                     case "b":
                         Benchmark = decodeURI(keyValuePair[1])
-                        sessionStorage.setItem("benchmark", Benchmark)
+                        localStorage.setItem("benchmark", Benchmark)
                         break
                 }
             }
             history.replaceState(null, "Algorithm Finder - Simulate", "?")
         } catch (err) {
             alert("Grid data incorrect!\nResetting all data.\nRedirecting to index page...")
-            sessionStorage.clear()
+            localStorage.clear()
             window.location.replace("./index.html")
             return
         }
     } else {
-        gridString = sessionStorage.getItem("grid")
-        algorithmString = sessionStorage.getItem("algorithms")
-        Benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
+        gridString = localStorage.getItem("grid")
+        algorithmString = localStorage.getItem("algorithms")
+        Benchmark = JSON.parse(localStorage.getItem("benchmark"))
     }
 
     // Redirect to index if missing setting(s)
@@ -93,6 +93,8 @@ async function init() {
     // Reconstuct algorithms from session storage
     Algorithms = JSON.parse(algorithmString)
 
+
+    // Run and benchmark algorithm(s)
     try {
         runAlgorithms()
     } catch (err) {
@@ -119,10 +121,12 @@ async function init() {
         document.getElementById("benchmarks").innerHTML = result
     }
 
+    // Init render engine
     renderEngine = new GPUDriver(Grid, Algorithms, StepHistory, QueueHistory, GRIDDOMROOT)
     if (!await renderEngine.getGPUAvaliablity()) {
         renderEngine = new DOMDriver(Grid, Algorithms, StepHistory, QueueHistory, GRIDDOMROOT)
     } else {
+        // Init WebGPU driver
         await renderEngine.init()
     }
     renderEngine.drawGrid()
@@ -133,6 +137,7 @@ async function init() {
         MaxStep = algorithmStep > MaxStep ? algorithmStep : MaxStep
     }
 
+    // update DOM elements
     updateProgressBar()
 
     PositionViewer = bootstrap.Toast.getOrCreateInstance(document.getElementById('positionViewer'))
@@ -225,8 +230,9 @@ function getPosFromID(element) {
     })
 }
 
+// Reset and edit, difference is clearing storage
 function hardReset() {
-    this.sessionStorage.clear()
+    this.localStorage.clear()
     window.location.replace("./index.html")
 }
 
@@ -319,7 +325,6 @@ function runBenchmark() {
     // Run benchmark and save times to benchmarkResult
     for (let algorithm of Algorithms) {
         if (StepHistory[algorithm].steps.length != 0) {
-            let totalTime = 0
 
             // Warmup
             for (let i = 0; i < Warmups; i++) {
@@ -327,14 +332,14 @@ function runBenchmark() {
                 runAlgorithm(algorithm, newGrid)
             }
 
+            const startTime = performance.now()
             // Run benchmark
             for (let j = 0; j < BenchmarkTimes; j++) {
                 let newGrid = cloneGrid(Grid)
-                const startTime = performance.now()
                 runAlgorithm(algorithm, newGrid)
-                const endTime = performance.now()
-                totalTime += endTime - startTime
             }
+            const endTime = performance.now()
+            const totalTime = endTime - startTime
 
             // Unit: μs
             BenchmarkResult[algorithm] = {avgTime: Math.round(1.0 * (totalTime / BenchmarkTimes) * 1e3)}
@@ -355,6 +360,8 @@ function runAlgorithms() {
         const startTime = performance.now()
 
         let result = runAlgorithm(algorithm, newGrid)
+
+        console.log(result)
 
         const endTime = performance.now()
 
@@ -419,7 +426,7 @@ function updateSpeed() {
 }
 
 function share() {
-    let resultURL = `${domain}/simulate.html?g=${compressGrid()}&a=${sessionStorage.getItem("algorithms")}&b=${sessionStorage.getItem("benchmark")}`
+    let resultURL = `${domain}/simulate.html?g=${compressGrid()}&a=${localStorage.getItem("algorithms")}&b=${localStorage.getItem("benchmark")}`
     navigator.clipboard.writeText(resultURL)
     document.getElementById("share").innerHTML = `<img src="./icons/clipboard-check.svg" alt="Start" width="23" height="23" class="svgs" style="align-self: last baseline;">&nbsp;&nbsp;Copied!`
 }

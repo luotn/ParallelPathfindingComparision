@@ -82,6 +82,7 @@ class GPUDriver {
             this.CANVASRESOURCES[algorithm] = new CanvasResource(this.Grid.toCellState(this.STATE))
     }
 
+    // This init is for async methods
     async init() {
         // Prepare dom elements
         let visualResult = `Using WebGPU to render maze...<br><br>`
@@ -187,6 +188,7 @@ class GPUDriver {
         })
     }
 
+    // Draws grid in initial state
     drawGrid() {
         // 1. Create arrays and format data for buffers
         const cellVertices = new Float32Array([
@@ -442,6 +444,7 @@ class GPUDriver {
         this.renderGrid()
     }
 
+    // Update canvas
     renderGrid() {
         const encoder = this.GPUDEVICE.createCommandEncoder()
         for (const algorithm of this.Algorithms) {
@@ -494,6 +497,7 @@ class GPUDriver {
         return [Math.floor(mouseX / this.cellSize), Math.floor(mouseY / this.cellSize)]
     }
 
+    // Render the current step
     updateVisuals(currentStep, lastRenderedStep) {
         this.updateCellState(currentStep, lastRenderedStep)
 
@@ -516,6 +520,7 @@ class GPUDriver {
         return currentStep
     }
 
+    // Update cell state from history objects
     updateCellState(currentStep, lastRenderedStep) {
         for (const algorithm of this.Algorithms) {
             const {history, steps, directions} = this.StepHistory[algorithm]
@@ -607,6 +612,7 @@ class GPUDriver {
         return x + ((this.Grid.height - y - 1) * this.Grid.height)
     }
 
+    // Convert direction to cell state
     directionsToCellState(directions) {
         let result = []
         directions.forEach(pathStepDirection => {

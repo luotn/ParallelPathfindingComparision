@@ -16,9 +16,9 @@ function init() {
     const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
     const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
 
-    let gridString = sessionStorage.getItem("grid")
-    let algorithmString = sessionStorage.getItem("algorithms")
-    let benchmark = JSON.parse(sessionStorage.getItem("benchmark"))
+    let gridString = localStorage.getItem("grid")
+    let algorithmString = localStorage.getItem("algorithms")
+    let benchmark = JSON.parse(localStorage.getItem("benchmark"))
     if (gridString != undefined && algorithmString != undefined && benchmark != null) {
         console.log("Reloading grid...")
         // Reconstruct grid object
@@ -222,6 +222,7 @@ function updateCell(cell, state) {
     cell.className = state
 }
 
+// Check inputed grid size
 function checkElementIsInt(element) {
     data = parseInt(document.getElementById(element).value)
     if (Number.isNaN(data) || data < 1) {
@@ -273,14 +274,14 @@ function simulate() {
     Walls.forEach(wall => {
         grid.setCell(wall, "wall")
     })
-    sessionStorage.setItem("grid", JSON.stringify(grid))
-    sessionStorage.setItem("algorithms", JSON.stringify(Algorithms))
+    localStorage.setItem("grid", JSON.stringify(grid))
+    localStorage.setItem("algorithms", JSON.stringify(Algorithms))
 
-    // Save benchmark settings to sessionStorage
+    // Save benchmark settings to localStorage
     if (document.getElementById("benchmark").checked)
-        sessionStorage.setItem("benchmark", true)
+        localStorage.setItem("benchmark", true)
     else
-        sessionStorage.setItem("benchmark", false)
+        localStorage.setItem("benchmark", false)
     console.log(`Simulation settings saved to session storage, proceeding to simulate...`)
     window.location.href = "./simulate.html"
 }
